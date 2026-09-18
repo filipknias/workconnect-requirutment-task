@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { ProductTable } from "@/features/products/components/product-table";
-import { getProductsPage } from "@/features/products/get-products-page";
+import { getProductsPage } from "@/features/products/data/get-products-page";
 
 /** Keeps the non-breaking spaces intact — collapsing them would defeat the point. */
 const verbatim = { normalizer: (value: string) => value };

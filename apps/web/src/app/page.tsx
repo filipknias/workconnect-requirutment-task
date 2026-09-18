@@ -1,9 +1,9 @@
-import { AddProductButton } from "@/features/products/components/add-product-button";
+import { AddProductDialog } from "@/features/products/components/add-product-dialog";
 import { ProductCardList } from "@/features/products/components/product-card-list";
 import { ProductTable } from "@/features/products/components/product-table";
-import { getProductsPage } from "@/features/products/get-products-page";
-import { formatProductCount } from "@/features/products/product-labels";
-import { loadProductSearchParams } from "@/features/products/search-params";
+import { getProductsPage } from "@/features/products/data/get-products-page";
+import { formatProductCount } from "@/features/products/utils/product-labels";
+import { loadProductSearchParams } from "@/features/products/utils/search-params";
 
 /**
  * Both layouts render and CSS picks one at `lg`. The page is a server
@@ -28,7 +28,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
               {formatProductCount(productsPage.total)} w katalogu
             </p>
           </div>
-          <AddProductButton />
+          <AddProductDialog />
         </header>
 
         <div className="hidden lg:block">

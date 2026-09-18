@@ -1,16 +1,4 @@
-export type ProductStatus = "available" | "unavailable";
-
-export type Product = {
-  id: string;
-  name: string;
-  sku: string;
-  category: string;
-  /** Gross price in PLN. */
-  price: number;
-  status: ProductStatus;
-  /** Units on hand, or `null` when the product is not stock-tracked. */
-  stock: number | null;
-};
+import type { Product } from "../types/product";
 
 /**
  * Mocked catalogue — there is no API yet. The first five rows are the ones the

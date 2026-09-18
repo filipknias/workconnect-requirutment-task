@@ -1,15 +1,7 @@
-import { PRODUCTS, type Product } from "./products";
+import type { ProductsPage } from "../types/product";
+import { PRODUCTS } from "./products";
 
 const PAGE_SIZE = 5;
-
-export type ProductsPage = {
-  /** Empty when the requested page is outside the catalogue. */
-  products: Product[];
-  /** The requested page, verbatim — an out-of-range number is reported as asked. */
-  page: number;
-  totalPages: number;
-  total: number;
-};
 
 /**
  * The single seam between the catalogue and the view. Everything paging-related

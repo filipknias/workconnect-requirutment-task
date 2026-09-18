@@ -7,7 +7,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@repo/ui/components/pagination";
-import { productPageHref } from "../search-params";
+import { productPageHref } from "../utils/search-params";
 
 const ITEM = "h-8 rounded-md text-sm font-medium text-neutral-950";
 /** The outline variant ships a `dark:bg-input/30` that would otherwise win over the blue. */

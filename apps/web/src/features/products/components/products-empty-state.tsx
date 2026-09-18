@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { productPageHref } from "../search-params";
+import { productPageHref } from "../utils/search-params";
 
 /**
  * What a page outside the catalogue shows. Both layouts render it, so the copy

@@ -62,7 +62,24 @@
     --font-sans: var(--font-sans);
 }
 
-:root {
+/*
+ * `.light-surface` pins the light palette onto a subtree.
+ *
+ * The product UI is light-only (see the note in `apps/web/src/app/page.tsx`),
+ * but the dark `@media` block below still repoints the tokens on `:root` for a
+ * dark-mode visitor — so anything that paints from them, an input's
+ * `border-input` or a popup's `bg-popover`, turns dark and vanishes against a
+ * white dialog. One class on the surface fixes every control inside it at once,
+ * instead of each component hard-coding neutrals to defend itself.
+ *
+ * It shares the declaration block with `:root` so the light values exist once.
+ * The dark block below deliberately keeps targeting `:root` alone: a
+ * `.light-surface` element sets these on itself, which beats what it would
+ * otherwise inherit. Portalled popups are outside the subtree in the DOM and
+ * need the class of their own.
+ */
+:root,
+.light-surface {
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);

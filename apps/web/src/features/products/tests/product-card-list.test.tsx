@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { ProductCardList } from "@/features/products/components/product-card-list";
-import { getProductsPage } from "@/features/products/get-products-page";
+import { getProductsPage } from "@/features/products/data/get-products-page";
 
 const verbatim = { normalizer: (value: string) => value };
 

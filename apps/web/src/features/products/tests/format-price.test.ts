@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPrice } from "@/features/products/format-price";
+import { formatPrice } from "@/features/products/utils/format-price";
 
 describe("formatPrice", () => {
   it("renders the Figma format — no grouping, comma decimals, NBSP before PLN", () => {

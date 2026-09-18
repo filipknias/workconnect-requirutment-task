@@ -1,5 +1,5 @@
 import { Badge } from "@repo/ui/components/badge";
-import type { ProductStatus } from "../products";
+import type { ProductStatus } from "../types/product";
 
 /**
  * Figma layers the accent colour under white at 90%, which is the same result

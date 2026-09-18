@@ -6,9 +6,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@repo/ui/components/card";
-import { formatPrice } from "../format-price";
-import type { ProductsPage } from "../get-products-page";
-import { formatPageCaption } from "../product-labels";
+import { formatPrice } from "../utils/format-price";
+import type { ProductsPage } from "../types/product";
+import { formatPageCaption } from "../utils/product-labels";
 import { ProductsEmptyState } from "./products-empty-state";
 import { ProductStatusBadge } from "./product-status-badge";
 import { ProductsPagination } from "./products-pagination";

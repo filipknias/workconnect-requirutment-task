@@ -78,13 +78,39 @@ component silently disappears from the output CSS.
 
 ### Feature-first structure in `apps/web`
 
-`apps/web` uses `src/`, with `@/*` mapped to `./src/*`. Group code by feature
-rather than by technical kind:
+`apps/web` uses `src/`, with `@/*` mapped to `./src/*`. The top level is grouped
+by feature rather than by technical kind:
 
 ```
 src/app/                 routes only — thin, delegating to features
-src/features/<feature>/  components, schemas, parsers, hooks for one feature
+src/components/          shared across features
+src/features/<feature>/  everything for one feature
 ```
+
+Inside a feature, group by kind. Not every folder is needed — add one when it
+has something to hold:
+
+```
+src/features/products/
+  types/       shared types for the feature — no runtime code
+  data/        the source of truth and the seam over it
+  schema/      Zod schemas, and the types inferred from them
+  utils/       pure helpers: formatters, labels, search-param parsers
+  components/  the feature's React components
+  tests/       flat; one file per module under test
+```
+
+`src/components/` follows the same rule one level down — a shared module folder
+keeps its components at the root and groups only what is not a component:
+
+```
+src/components/form/
+  text-field.tsx  textarea-field.tsx  select-field.tsx  chip-group-field.tsx
+  hooks/       use-app-form.ts, use-field-presentation.ts
+  context/     field-context.ts
+```
+
+There are no barrel files anywhere. Import the module you want by its path.
 
 ### Forms
 
@@ -108,11 +134,11 @@ legacy `form` component, which is react-hook-form specific.
 else is scaffolded.
 
 Convention: a feature that reads search params declares its parsers once, in
-`src/features/<feature>/search-params.ts`, and both the client hooks and the
-server loader import that same object.
+`src/features/<feature>/utils/search-params.ts`, and both the client hooks and
+the server loader import that same object.
 
 ```ts
-// src/features/shifts/search-params.ts
+// src/features/shifts/utils/search-params.ts
 import { createLoader, parseAsInteger, parseAsString } from "nuqs/server";
 
 export const shiftSearchParams = {
@@ -132,12 +158,21 @@ at a call site — the default would drift between the two.
 
 ### Tests
 
-Vitest, jsdom, Testing Library. Tests live in a per-workspace `tests/`
-directory, never alongside the source under `src/`.
+Vitest, jsdom, Testing Library. Tests live in a `tests/` directory — never
+beside the file they test — and that directory sits as close to the code as the
+code's own grouping allows:
 
-Each workspace has a `vitest.config.mts` that re-exports the shared
-`@repo/vitest-config/react`. `globals: true` is on, which is what gives
-Testing Library its automatic `cleanup` between tests.
+```
+apps/web/src/features/<feature>/tests/   the feature's tests, flat
+apps/web/tests/                          route-level tests only
+packages/ui/tests/                       the package's tests
+```
+
+`packages/ui` re-exports the shared `@repo/vitest-config/react` as-is, which
+collects `tests/**`. `apps/web/vitest.config.mts` merges `src/**/*.test.{ts,tsx}`
+on top so the co-located feature tests are picked up too — `mergeConfig`
+concatenates `include`, so both globs stay live. `globals: true` is on, which is
+what gives Testing Library its automatic `cleanup` between tests.
 
 Inside `packages/ui`, tests import components by relative path
 (`../src/components/dialog`) rather than through `@repo/ui/...`.

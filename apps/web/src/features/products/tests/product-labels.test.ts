@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatPageCaption,
   formatProductCount,
-} from "@/features/products/product-labels";
+} from "@/features/products/utils/product-labels";
 
 describe("formatProductCount", () => {
   it("uses the singular for one", () => {

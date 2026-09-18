@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getProductsPage } from "@/features/products/get-products-page";
+import { getProductsPage } from "@/features/products/data/get-products-page";
 
 describe("getProductsPage", () => {
   it("returns the first five products on page one", () => {
