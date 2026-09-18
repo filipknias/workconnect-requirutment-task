@@ -1,0 +1,7 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# unrs-resolver ships a native binary used by eslint-config-next's import resolver.
+onlyBuiltDependencies:
+  - unrs-resolver

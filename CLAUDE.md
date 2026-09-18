@@ -21,3 +21,52 @@ Can I simplify the parameters? Can I hide more complexity inside?
   or requests it.
 - Security is important but should not be over-indexed on, especially for
   dev-mode or maintainer-only features.
+
+### Repository layout
+
+pnpm workspaces + Turborepo. `apps/web` (Next 16 App Router, `src/` +
+feature-first), `packages/ui` (`@repo/ui`), and three config packages:
+`@repo/eslint-config`, `@repo/typescript-config`, `@repo/vitest-config`.
+
+Run gates from the root: `pnpm lint`, `pnpm typecheck`, `pnpm test`,
+`pnpm build`. Do not add a root `tsconfig.json`; each workspace owns its own.
+
+### Things that will bite you
+
+- **`packages/ui/src/styles/globals.css` contains a load-bearing
+  `@source "../**/*.{ts,tsx}"`.** Tailwind skips `node_modules` during source
+  detection and `packages/ui` is symlinked there. Remove that line and every
+  class used only inside a `@repo/ui` component vanishes from the output CSS —
+  silently, with no build error.
+- **Dark mode is hand-edited.** Decision: system-only, via
+  `@custom-variant dark (@media (prefers-color-scheme: dark))` plus a
+  `@media (prefers-color-scheme: dark) { :root { … } }` token block. The shadcn
+  CLI emits a `.dark` class variant instead, so `shadcn init --force` will
+  revert both spots. Re-apply them afterwards.
+- **`shadcn init` cannot run in `packages/ui`** — the CLI refuses any workspace
+  it does not recognise as a framework. `packages/ui/components.json` is
+  therefore checked in, matching what shadcn's own monorepo scaffolder writes.
+  `shadcn add` works normally:
+  `pnpm --filter @repo/ui exec shadcn add <component>`.
+- **The style is `base-nova`, not Radix.** Components import
+  `@base-ui/react/*` and compose through a `render` prop, not `asChild`. Most
+  shadcn monorepo tutorials online predate this and are wrong for this repo.
+- **`cn` is an npm package**, imported as `import { cn } from "cn"`. There is
+  no `lib/utils.ts`, no `clsx` and no `tailwind-merge`.
+- **`transpilePackages` is not needed.** Next 16 transpiles workspace packages
+  automatically. Adding it is cargo cult.
+- **`@repo/vitest-config/react.ts` imports its sibling via the package's own
+  name** (`@repo/vitest-config/base`), not a relative path. Vite externalises
+  config imports, so Node resolves them — a relative `./base` would need a file
+  extension that TypeScript then rejects.
+
+### Scaffold boundaries
+
+`packages/ui` is presentation only: no Zod, no TanStack Form, no nuqs. Zod and
+TanStack Form are installed but unwired on purpose — there is no `useAppForm`
+binding and no multistep shell yet. Build them with the first real form.
+
+Tests live in each workspace's `tests/` directory, never under `src/`.
+
+See `README.md` for the full conventions, including the nuqs shared-parser
+convention.
