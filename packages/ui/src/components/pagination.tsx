@@ -35,6 +35,12 @@ function PaginationItem({ ...props }: React.ComponentProps<"li">) {
 
 type PaginationLinkProps = {
   isActive?: boolean
+  /**
+   * The element the link renders as. Defaults to a plain anchor, which means a
+   * full document navigation — pass a framework link (Next's `<Link>`) or a
+   * `<span>` for a disabled control to keep that from happening.
+   */
+  render?: React.ReactElement<Record<string, unknown>>
 } & Pick<React.ComponentProps<typeof Button>, "size"> &
   React.ComponentProps<"a">
 
@@ -42,6 +48,7 @@ function PaginationLink({
   className,
   isActive,
   size = "icon",
+  render = <a />,
   ...props
 }: PaginationLinkProps) {
   return (
@@ -50,14 +57,18 @@ function PaginationLink({
       size={size}
       className={cn(className)}
       nativeButton={false}
-      render={
-        <a
-          aria-current={isActive ? "page" : undefined}
-          data-slot="pagination-link"
-          data-active={isActive}
-          {...props}
-        />
-      }
+      render={React.cloneElement(render, {
+        "aria-current": isActive ? "page" : undefined,
+        "data-slot": "pagination-link",
+        "data-active": isActive,
+        // `nativeButton={false}` makes Base UI stamp `role="button"` and
+        // `tabIndex` onto whatever it renders. On a real link that is wrong —
+        // it would be announced as a button — and the anchor is already
+        // focusable, so both are cleared here.
+        role: undefined,
+        tabIndex: undefined,
+        ...props,
+      })}
     />
   )
 }
@@ -75,7 +86,7 @@ function PaginationPrevious({
       {...props}
     >
       <ChevronLeftIcon data-icon="inline-start" />
-      <span className="hidden sm:block">{text}</span>
+      <span>{text}</span>
     </PaginationLink>
   )
 }
@@ -92,7 +103,7 @@ function PaginationNext({
       className={cn("pr-1.5!", className)}
       {...props}
     >
-      <span className="hidden sm:block">{text}</span>
+      <span>{text}</span>
       <ChevronRightIcon data-icon="inline-end" />
     </PaginationLink>
   )

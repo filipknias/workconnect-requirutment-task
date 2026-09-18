@@ -1,80 +1,43 @@
-import { Button } from "@repo/ui/components/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@repo/ui/components/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@repo/ui/components/table";
+import { AddProductButton } from "@/features/products/components/add-product-button";
+import { ProductCardList } from "@/features/products/components/product-card-list";
+import { ProductTable } from "@/features/products/components/product-table";
+import { getProductsPage } from "@/features/products/get-products-page";
+import { formatProductCount } from "@/features/products/product-labels";
+import { loadProductSearchParams } from "@/features/products/search-params";
 
 /**
- * Smoke test for the scaffold, not a feature. It exists to prove three things
- * end to end: `@repo/ui` resolves from the app, a Base UI client component
- * hydrates inside a server component, and Tailwind picks up classes that are
- * only ever written inside `packages/ui`.
+ * Both layouts render and CSS picks one at `lg`. The page is a server
+ * component, so the pagination links are real hrefs and paging is a navigation
+ * rather than client state.
+ *
+ * `bg-neutral-50` is on the page rather than left to the body: `globals.css`
+ * still declares a dark palette this page does not honour, and without it the
+ * body would go dark behind white cards in a dark-mode browser.
  */
-const shifts = [
-  { id: "1", role: "Barista", site: "Kraków — Rynek", status: "Open" },
-  { id: "2", role: "Warehouse picker", site: "Wrocław — Bielany", status: "Filled" },
-  { id: "3", role: "Event steward", site: "Warszawa — Centrum", status: "Open" },
-];
+export default async function Home({ searchParams }: PageProps<"/">) {
+  const { page } = await loadProductSearchParams(searchParams);
+  const productsPage = getProductsPage(page);
 
-export default function Home() {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-6 py-16">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold tracking-tight">WorkConnect</h1>
-        <p className="text-muted-foreground">
-          Scaffold smoke test — every element below is rendered by a component
-          from <code className="font-mono">@repo/ui</code>.
-        </p>
-      </header>
+    <main className="flex-1 bg-neutral-50 px-4 pt-6 pb-10 lg:px-6 lg:py-12">
+      <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-4 lg:gap-6">
+        <header className="flex items-center justify-between gap-1">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-xl font-semibold text-neutral-950">Produkty</h1>
+            <p className="text-sm text-neutral-500">
+              {formatProductCount(productsPage.total)} w katalogu
+            </p>
+          </div>
+          <AddProductButton />
+        </header>
 
-      <Dialog>
-        <DialogTrigger render={<Button>Open dialog</Button>} />
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>It works</DialogTitle>
-            <DialogDescription>
-              A Base UI dialog from the shared package, styled by tokens the
-              package also owns.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose render={<Button variant="outline">Close</Button>} />
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Role</TableHead>
-            <TableHead>Site</TableHead>
-            <TableHead>Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {shifts.map((shift) => (
-            <TableRow key={shift.id}>
-              <TableCell className="font-medium">{shift.role}</TableCell>
-              <TableCell>{shift.site}</TableCell>
-              <TableCell>{shift.status}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+        <div className="hidden lg:block">
+          <ProductTable {...productsPage} />
+        </div>
+        <div className="lg:hidden">
+          <ProductCardList {...productsPage} />
+        </div>
+      </div>
     </main>
   );
 }
