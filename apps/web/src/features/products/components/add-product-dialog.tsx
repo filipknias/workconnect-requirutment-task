@@ -32,7 +32,7 @@ const STEPS: StepperStep[] = [
 ];
 
 /**
- * Full-bleed below `md` and a centred 720px card above it, from one set of
+ * Full-bleed below `sm` and a centred 720px card above it, from one set of
  * classes: the popup is a four-row grid (title, stepper, fields, footer) in
  * both, and only the fields row scrolls, so the title and the "Dalej" button
  * stay put on a phone.
@@ -45,7 +45,7 @@ const STEPS: StepperStep[] = [
  * `bg-popover`/`text-popover-foreground`, so there is nothing to hard-code.
  */
 const CONTENT_CLASS =
-  "light-surface top-0 right-0 bottom-0 left-0 max-h-none w-full max-w-none translate-x-0 translate-y-0 grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-0 rounded-none p-0 ring-0 sm:max-w-none md:top-1/2 md:right-auto md:bottom-auto md:left-1/2 md:max-h-[85vh] md:w-[calc(100%-2rem)] md:max-w-[720px] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-xl md:ring-1";
+  "light-surface top-0 right-0 bottom-0 left-0 max-h-none w-full max-w-none translate-x-0 translate-y-0 grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-0 rounded-none p-0 ring-0 sm:top-1/2 sm:right-auto sm:bottom-auto sm:left-1/2 sm:max-h-[85vh] sm:w-[calc(100%-2rem)] sm:max-w-[720px] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:ring-1";
 
 /**
  * The trigger and the "Dodaj nowy produkt" wizard. Only step 1 is built; steps
@@ -74,7 +74,7 @@ export function AddProductDialog() {
             <Button
               variant="ghost"
               size="icon-sm"
-              className="absolute top-4 right-4 text-neutral-500 md:top-5 md:right-5"
+              className="absolute top-4 right-4 text-neutral-500 sm:top-5 sm:right-5"
             >
               <XIcon />
               <span className="sr-only">Zamknij</span>
@@ -94,7 +94,7 @@ function AddProductWizard() {
   // go with it — reopening always starts from a blank step one, with no
   // form.reset() to remember to call. If anyone ever passes keepMounted, that
   // guarantee disappears silently; "starts over" in
-  // tests/products/add-product-dialog.test.tsx is what catches it.
+  // ../tests/add-product-dialog.test.tsx is what catches it.
   const [step] = useState(1); // the setter arrives with step 2
   const form = useAppForm({
     defaultValues: PRODUCT_INFO_DEFAULTS,
@@ -106,7 +106,7 @@ function AddProductWizard() {
 
   return (
     <>
-      <DialogHeader className="border-b border-neutral-200 px-6 py-5">
+      <DialogHeader className="border-b border-neutral-200 px-4 py-5">
         <DialogTitle className="text-lg font-semibold">
           Dodaj nowy produkt
         </DialogTitle>
@@ -116,10 +116,10 @@ function AddProductWizard() {
         steps={STEPS}
         currentStep={step}
         aria-label="Postęp dodawania produktu"
-        className="border-b border-neutral-200 px-6 py-5"
+        className="border-b border-neutral-200 px-4 py-5"
       />
 
-      <div className="overflow-y-auto px-6 pt-5 pb-8">
+      <div className="overflow-y-auto px-4 pt-5 pb-8">
         <FieldGroup>
           <div className="grid gap-5 md:grid-cols-2">
             <form.AppField name="name">
@@ -191,7 +191,7 @@ function AddProductWizard() {
         </FieldGroup>
       </div>
 
-      <DialogFooter className="mx-0 mb-0 rounded-none border-neutral-200 bg-neutral-50 px-6 py-4 md:rounded-b-xl">
+      <DialogFooter className="mx-0 mb-0 rounded-none border-neutral-200 bg-neutral-50 px-4 py-4 sm:rounded-b-xl">
         {/* There is no step 2 to go to yet, so this does nothing. It stays in
             the tab order and keeps its name so it is still discoverable:
             `focusableWhenDisabled` makes Base UI mark it aria-disabled instead

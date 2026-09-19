@@ -1,7 +1,7 @@
 import { AddProductDialog } from "@/features/products/components/add-product-dialog";
 import { ProductCardList } from "@/features/products/components/product-card-list";
 import { ProductTable } from "@/features/products/components/product-table";
-import { getProductsPage } from "@/features/products/data/get-products-page";
+import { getProductsPage } from "@/features/products/utils/get-products-page";
 import { formatProductCount } from "@/features/products/utils/product-labels";
 import { loadProductSearchParams } from "@/features/products/utils/search-params";
 

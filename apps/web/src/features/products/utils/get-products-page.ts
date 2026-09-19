@@ -1,5 +1,5 @@
 import type { ProductsPage } from "../types/product";
-import { PRODUCTS } from "./products";
+import { PRODUCTS } from "../data/products";
 
 const PAGE_SIZE = 5;
 
