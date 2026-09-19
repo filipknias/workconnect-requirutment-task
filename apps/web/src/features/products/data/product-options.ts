@@ -37,3 +37,29 @@ export const PRODUCT_FEATURES: readonly ProductOption[] = [
   { value: "ekologiczny", label: "Ekologiczny" },
   { value: "premium", label: "Premium" },
 ];
+
+/**
+ * The Polish VAT rates, invented — the frame shows only the selected `23%`.
+ * Ordered with the standard rate first, which is what makes it the default.
+ *
+ * The value is the percentage as a number, because that is what the gross
+ * price is computed from; see `../utils/recalculate-prices.ts`.
+ */
+export const PRODUCT_VAT_RATES: readonly ProductOption<number>[] = [
+  { value: 23, label: "23%" },
+  { value: 8, label: "8%" },
+  { value: 5, label: "5%" },
+  { value: 0, label: "0%" },
+];
+
+/**
+ * Also invented; the frame shows only `PLN`, which stays first and so is the
+ * default. The value is the ISO code rather than a slug — it is already
+ * canonical and is what the label shows.
+ */
+export const PRODUCT_CURRENCIES: readonly ProductOption[] = [
+  { value: "PLN", label: "PLN" },
+  { value: "EUR", label: "EUR" },
+  { value: "USD", label: "USD" },
+  { value: "GBP", label: "GBP" },
+];

@@ -1,4 +1,5 @@
 import * as React from "react"
+import { CheckIcon } from "lucide-react"
 import { cn } from "cn"
 
 /**
@@ -37,6 +38,9 @@ function Stepper({
       {steps.map((step, index) => {
         const number = index + 1
         const isCurrent = number === currentStep
+        // Derived, not passed in: `currentStep` already says which steps are
+        // behind it, and a second prop saying so could disagree with it.
+        const isCompleted = number < currentStep
         const isLast = index === steps.length - 1
 
         return (
@@ -51,16 +55,20 @@ function Stepper({
                 aria-hidden
                 className={cn(
                   "flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-medium",
-                  isCurrent
+                  isCurrent || isCompleted
                     ? "bg-blue-600 text-white"
                     : "bg-neutral-100 text-neutral-500"
                 )}
               >
-                {number}
+                {isCompleted ? <CheckIcon className="size-4" /> : number}
               </span>
               <span className="flex flex-col">
                 <span className="text-sm font-medium text-neutral-950">
                   {step.title}
+                  {/* The circle is the only thing that says "done" and it is
+                      aria-hidden, so without this a completed step and an
+                      untouched one read identically. */}
+                  {isCompleted && <span className="sr-only"> Ukończony</span>}
                 </span>
                 <span className="text-xs text-neutral-500">
                   {step.description}
@@ -72,7 +80,10 @@ function Stepper({
             {!isLast && (
               <span
                 aria-hidden
-                className="hidden h-px flex-1 bg-neutral-200 md:block"
+                className={cn(
+                  "hidden h-px flex-1 md:block",
+                  isCompleted ? "bg-blue-600" : "bg-neutral-200"
+                )}
               />
             )}
           </li>

@@ -27,8 +27,12 @@ export type ProductsPage = {
  *
  * `value` is a slug, `label` is what the frame shows. Storing the slug keeps
  * the submitted value stable if the Polish copy is ever retouched.
+ *
+ * Generic because the VAT rates are the one list whose value is arithmetic
+ * rather than an identifier: `ProductOption<number>` keeps `23` a number from
+ * the list to the form state, instead of parsing `"23"` back out at the edge.
  */
-export type ProductOption = {
-  value: string;
+export type ProductOption<TValue = string> = {
+  value: TValue;
   label: string;
 };

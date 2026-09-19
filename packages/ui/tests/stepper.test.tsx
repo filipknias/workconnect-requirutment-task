@@ -47,6 +47,19 @@ describe("Stepper", () => {
     expect(current()[0]).toHaveTextContent("Cena");
   });
 
+  it("says which steps are behind the current one", () => {
+    render(<Stepper steps={STEPS} currentStep={2} />);
+
+    const items = screen.getAllByRole("listitem");
+    // The checkmark replaces the numeral and is aria-hidden like it, so the
+    // label is what has to carry "done" — otherwise a finished step and an
+    // untouched one read identically.
+    expect(items[0]).toHaveTextContent("Ukończony");
+    expect(items[1]).not.toHaveTextContent("Ukończony");
+    expect(items[2]).not.toHaveTextContent("Ukończony");
+    expect(screen.queryByText("1")).not.toBeInTheDocument();
+  });
+
   it("offers nothing to click or tab to", () => {
     render(<Stepper steps={STEPS} currentStep={1} />);
 

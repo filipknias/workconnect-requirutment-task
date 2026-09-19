@@ -11,27 +11,41 @@ import {
 import { useFieldContext } from "./context/field-context";
 import { useFieldPresentation } from "./hooks/use-field-presentation";
 
-export type SelectFieldOption = {
-  value: string;
+export type SelectFieldOption<TValue = string> = {
+  value: TValue;
   label: string;
 };
 
 /**
  * A single-choice field bound to the enclosing `form.AppField`. The form stores
  * the option's `value`; the trigger shows its `label`.
+ *
+ * Generic over that value so a list of numbers — the VAT rates — goes in and
+ * comes back out a number. The alternative would be a second copy of this
+ * component, and the copy would have to repeat the `""`/`null` dance below,
+ * which is the one piece of logic here worth not duplicating.
  */
-export function SelectField({
+export function SelectField<TValue extends string | number = string>({
   label,
   placeholder,
   options,
   required = false,
+  onValueChange,
 }: {
   label: string;
   placeholder?: string;
-  options: readonly SelectFieldOption[];
+  options: readonly SelectFieldOption<TValue>[];
   required?: boolean;
+  /**
+   * Replaces the default "write the choice to this field". Step 2's VAT select
+   * needs it: picking a rate also rewrites the gross price, so the whole edit
+   * has to go through one place.
+   */
+  onValueChange?: (value: TValue) => void;
 }) {
-  const field = useFieldContext<string>();
+  // `""` is how a string-valued field spells empty; a number-valued one always
+  // holds an option, so the empty case never arises for it.
+  const field = useFieldContext<TValue | "">();
   const { id, errorId, error, invalid, describedBy, handleBlur } =
     useFieldPresentation("touch");
 
@@ -43,7 +57,14 @@ export function SelectField({
         // The form's empty value is "", but Base UI spells "nothing selected"
         // as null — that is what makes the placeholder show.
         value={field.state.value === "" ? null : field.state.value}
-        onValueChange={(value) => field.handleChange(value ?? "")}
+        onValueChange={(value: TValue | null) => {
+          if (value === null) {
+            field.handleChange("");
+            return;
+          }
+          if (onValueChange) onValueChange(value);
+          else field.handleChange(value);
+        }}
         // Opening the popup moves focus off the trigger, so the trigger's own
         // blur fires while the user is still choosing and would flash an error
         // mid-interaction. Closing the popup is the moment they are done with

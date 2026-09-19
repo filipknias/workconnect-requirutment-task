@@ -12,6 +12,33 @@ async function openDialog(user: ReturnType<typeof open>) {
   return screen.getByRole("dialog");
 }
 
+/**
+ * A filled-in step one. The chip is not part of what "Dalej" waits for — the
+ * features are optional — but it is ticked here so the step-2 tests carry a
+ * value across the step boundary and back.
+ */
+async function fillStepOne(user: ReturnType<typeof open>) {
+  await user.type(screen.getByLabelText("Nazwa produktu"), "MacBook Pro 14");
+  await user.type(screen.getByLabelText("SKU produktu"), "MBP14M3PRO");
+  await user.click(screen.getByLabelText("Producent"));
+  await user.click(await screen.findByRole("option", { name: "Apple" }));
+  await user.click(screen.getByLabelText("Kategoria"));
+  await user.click(await screen.findByRole("option", { name: "Komputery" }));
+  await user.click(screen.getByRole("checkbox", { name: "Bluetooth" }));
+}
+
+async function goToStepTwo(user: ReturnType<typeof open>) {
+  await fillStepOne(user);
+  await user.click(screen.getByRole("button", { name: "Dalej" }));
+}
+
+/** The step the stepper is showing as in progress. */
+function currentStep() {
+  return screen
+    .getAllByRole("listitem")
+    .filter((step) => step.getAttribute("aria-current") === "step")[0];
+}
+
 describe("AddProductDialog", () => {
   it("opens from the trigger onto step one", async () => {
     const user = open();
@@ -152,21 +179,32 @@ describe("AddProductDialog", () => {
     expect(wifi).toBeChecked();
   });
 
-  it("complains once every chip is turned back off", async () => {
+  it("says nothing when every chip is turned back off", async () => {
     const user = open();
     render(<AddProductDialog />);
     await openDialog(user);
 
     const bluetooth = screen.getByRole("checkbox", { name: "Bluetooth" });
     await user.click(bluetooth);
-    expect(
-      screen.queryByText("Wybierz co najmniej jedną cechę produktu"),
-    ).not.toBeInTheDocument();
-
     await user.click(bluetooth);
-    expect(
-      screen.getByText("Wybierz co najmniej jedną cechę produktu"),
-    ).toBeInTheDocument();
+
+    expect(bluetooth).not.toBeChecked();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("lets step one through with no chip ticked at all", async () => {
+    const user = open();
+    render(<AddProductDialog />);
+    await openDialog(user);
+
+    await fillStepOne(user);
+    await user.click(screen.getByRole("checkbox", { name: "Bluetooth" }));
+
+    expect(screen.getByRole("checkbox", { name: "Bluetooth" })).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "Dalej" })).toHaveAttribute(
+      "aria-disabled",
+      "false",
+    );
   });
 
   it("starts over when it is closed and reopened", async () => {
@@ -266,7 +304,7 @@ describe("AddProductDialog", () => {
     ).toBeInTheDocument();
   });
 
-  it("leaves Dalej inert but reachable", async () => {
+  it("keeps Dalej inert while step one is incomplete", async () => {
     const user = open();
     render(<AddProductDialog />);
     await openDialog(user);
@@ -281,10 +319,184 @@ describe("AddProductDialog", () => {
     // Clicking it does nothing — still step one, still open.
     await user.click(dalej);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(currentStep()).toHaveTextContent("Informacje");
+  });
+
+  it("keeps Dalej inert while step one is only half filled", async () => {
+    const user = open();
+    render(<AddProductDialog />);
+    await openDialog(user);
+
+    await user.type(screen.getByLabelText("Nazwa produktu"), "MacBook Pro 14");
+    await user.type(screen.getByLabelText("SKU produktu"), "MBP14M3PRO");
+
+    expect(screen.getByRole("button", { name: "Dalej" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+  });
+
+  it("lights Dalej up once step one validates, and not before", async () => {
+    const user = open();
+    render(<AddProductDialog />);
+    await openDialog(user);
+
+    await fillStepOne(user);
+
+    // Base UI keeps the attribute and flips it, rather than dropping it.
+    expect(screen.getByRole("button", { name: "Dalej" })).toHaveAttribute(
+      "aria-disabled",
+      "false",
+    );
+  });
+
+  it("goes on to step two, and says step one is done", async () => {
+    const user = open();
+    render(<AddProductDialog />);
+    await openDialog(user);
+
+    await goToStepTwo(user);
+
+    expect(currentStep()).toHaveTextContent("Cena");
+    // The circle that turns into a checkmark is aria-hidden, so this is the
+    // only thing that tells a screen reader step one is behind us.
+    expect(screen.getAllByRole("listitem")[0]).toHaveTextContent("Ukończony");
+    expect(screen.queryByLabelText("Nazwa produktu")).not.toBeInTheDocument();
+  });
+
+  it("renders the step-two fields the frame draws", async () => {
+    const user = open();
+    render(<AddProductDialog />);
+    await openDialog(user);
+    await goToStepTwo(user);
+
+    expect(screen.getByLabelText("Cena netto")).toHaveAttribute(
+      "placeholder",
+      "0.00",
+    );
+    expect(screen.getByLabelText("Cena brutto")).toHaveAttribute(
+      "placeholder",
+      "0.00",
+    );
+    // Both start empty, and empty means empty — not a zero the schema would
+    // have to tell apart from a typed one.
+    expect(screen.getByLabelText("Cena netto")).toHaveValue(null);
+    expect(screen.getByLabelText("Cena brutto")).toHaveValue(null);
+    // Filled in the frame, so they are defaults rather than placeholders.
+    expect(screen.getByLabelText("Stawka VAT")).toHaveTextContent("23%");
+    expect(screen.getByLabelText("Waluta")).toHaveTextContent("PLN");
+  });
+
+  it("fills in the gross price as the net one is typed", async () => {
+    const user = open();
+    render(<AddProductDialog />);
+    await openDialog(user);
+    await goToStepTwo(user);
+
+    await user.type(screen.getByLabelText("Cena netto"), "100");
+
+    expect(screen.getByLabelText("Cena brutto")).toHaveValue(123);
+  });
+
+  it("works backwards from the gross price too", async () => {
+    const user = open();
+    render(<AddProductDialog />);
+    await openDialog(user);
+    await goToStepTwo(user);
+
+    await user.type(screen.getByLabelText("Cena brutto"), "123");
+
+    expect(screen.getByLabelText("Cena netto")).toHaveValue(100);
+  });
+
+  it("recalculates both prices when the VAT rate changes", async () => {
+    const user = open();
+    render(<AddProductDialog />);
+    await openDialog(user);
+    await goToStepTwo(user);
+
+    await user.type(screen.getByLabelText("Cena netto"), "100");
+    await user.click(screen.getByLabelText("Stawka VAT"));
+    await user.click(await screen.findByRole("option", { name: "8%" }));
+
+    expect(screen.getByLabelText("Cena netto")).toHaveValue(100);
+    expect(screen.getByLabelText("Cena brutto")).toHaveValue(108);
+  });
+
+  it("empties one price when the other is cleared", async () => {
+    const user = open();
+    render(<AddProductDialog />);
+    await openDialog(user);
+    await goToStepTwo(user);
+
+    await user.type(screen.getByLabelText("Cena netto"), "100");
+    await user.clear(screen.getByLabelText("Cena netto"));
+
+    expect(screen.getByLabelText("Cena brutto")).toHaveValue(null);
+  });
+
+  it("complains about a price left empty, and about a zero", async () => {
+    const user = open();
+    render(<AddProductDialog />);
+    await openDialog(user);
+    await goToStepTwo(user);
+
+    screen.getByLabelText("Cena netto").focus();
+    await user.tab();
+    expect(screen.getByText("Cena netto jest wymagana")).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Cena netto"), "0");
     expect(
-      screen
-        .getAllByRole("listitem")
-        .filter((step) => step.getAttribute("aria-current") === "step")[0],
-    ).toHaveTextContent("Informacje");
+      screen.getByText("Cena netto musi być większa od zera"),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps what was typed when Wstecz goes back", async () => {
+    const user = open();
+    render(<AddProductDialog />);
+    await openDialog(user);
+    await goToStepTwo(user);
+
+    await user.type(screen.getByLabelText("Cena netto"), "100");
+    await user.click(screen.getByRole("button", { name: "Wstecz" }));
+
+    expect(currentStep()).toHaveTextContent("Informacje");
+    expect(screen.getByLabelText("Nazwa produktu")).toHaveValue(
+      "MacBook Pro 14",
+    );
+    expect(screen.getByLabelText("Kategoria")).toHaveTextContent("Komputery");
+    expect(screen.getByRole("checkbox", { name: "Bluetooth" })).toBeChecked();
+
+    await user.click(screen.getByRole("button", { name: "Dalej" }));
+    expect(screen.getByLabelText("Cena netto")).toHaveValue(100);
+    expect(screen.getByLabelText("Cena brutto")).toHaveValue(123);
+  });
+
+  it("has no Wstecz on step one", async () => {
+    const user = open();
+    render(<AddProductDialog />);
+    await openDialog(user);
+
+    expect(
+      screen.queryByRole("button", { name: "Wstecz" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("leaves step two's Dalej inert, however complete the prices are", async () => {
+    const user = open();
+    render(<AddProductDialog />);
+    await openDialog(user);
+    await goToStepTwo(user);
+
+    await user.type(screen.getByLabelText("Cena netto"), "100");
+
+    // Step three has no panel to go to. An enabled button that ignores the
+    // click would be worse than one that says it is not ready.
+    const dalej = screen.getByRole("button", { name: "Dalej" });
+    expect(dalej).toHaveAttribute("aria-disabled", "true");
+    expect(dalej).not.toBeDisabled();
+
+    await user.click(dalej);
+    expect(currentStep()).toHaveTextContent("Cena");
   });
 });

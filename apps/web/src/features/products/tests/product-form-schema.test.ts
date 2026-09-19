@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  isStepComplete,
+  PRODUCT_FORM_DEFAULTS,
   PRODUCT_INFO_DEFAULTS,
+  PRODUCT_PRICING_DEFAULTS,
   productInfoSchema,
+  productPricingSchema,
 } from "@/features/products/schema/product-form-schema";
 
 /** The message a field would show — the first failing check, as the form does. */
@@ -32,7 +36,7 @@ describe("productInfoSchema", () => {
 
     expect(result.success).toBe(false);
     expect(new Set(result.error?.issues.map((issue) => issue.path[0]))).toEqual(
-      new Set(["name", "sku", "manufacturer", "category", "features"]),
+      new Set(["name", "sku", "manufacturer", "category"]),
     );
   });
 
@@ -103,11 +107,124 @@ describe("productInfoSchema", () => {
   });
 
   describe("features", () => {
-    it("needs at least one", () => {
-      expect(firstError({ features: [] }, "features")).toBe(
-        "Wybierz co najmniej jedną cechę produktu",
-      );
+    it("is optional", () => {
+      expect(firstError({ features: [] }, "features")).toBeUndefined();
       expect(firstError({ features: ["bluetooth", "wifi"] }, "features")).toBeUndefined();
     });
+
+    it("does not hold step one back", () => {
+      expect(isStepComplete(1, { ...VALID, features: [] })).toBe(true);
+    });
+  });
+});
+
+/** The same, for step 2. */
+function firstPricingError(
+  values: Partial<typeof PRODUCT_PRICING_DEFAULTS>,
+  field: keyof typeof PRODUCT_PRICING_DEFAULTS,
+): string | undefined {
+  const result = productPricingSchema.safeParse({ ...VALID_PRICING, ...values });
+  return result.error?.issues.find((issue) => issue.path[0] === field)?.message;
+}
+
+const VALID_PRICING = {
+  priceNet: 100,
+  priceGross: 123,
+  vatRate: 23,
+  currency: "PLN",
+};
+
+describe("productPricingSchema", () => {
+  it("accepts a filled-in step two", () => {
+    expect(productPricingSchema.safeParse(VALID_PRICING).success).toBe(true);
+  });
+
+  it("accepts the rate and currency it starts on", () => {
+    expect(
+      firstPricingError({ vatRate: PRODUCT_PRICING_DEFAULTS.vatRate }, "vatRate"),
+    ).toBeUndefined();
+    expect(
+      firstPricingError(
+        { currency: PRODUCT_PRICING_DEFAULTS.currency },
+        "currency",
+      ),
+    ).toBeUndefined();
+  });
+
+  it("rejects the empty defaults on both prices", () => {
+    const result = productPricingSchema.safeParse(PRODUCT_PRICING_DEFAULTS);
+
+    expect(result.success).toBe(false);
+    expect(new Set(result.error?.issues.map((issue) => issue.path[0]))).toEqual(
+      new Set(["priceNet", "priceGross"]),
+    );
+  });
+
+  describe("prices", () => {
+    it("are required, and an empty box is null rather than zero", () => {
+      expect(firstPricingError({ priceNet: null }, "priceNet")).toBe(
+        "Cena netto jest wymagana",
+      );
+      expect(firstPricingError({ priceGross: null }, "priceGross")).toBe(
+        "Cena brutto jest wymagana",
+      );
+    });
+
+    it("reject zero — which is what a half-hearted keystroke leaves behind", () => {
+      expect(firstPricingError({ priceNet: 0 }, "priceNet")).toBe(
+        "Cena netto musi być większa od zera",
+      );
+      expect(firstPricingError({ priceGross: 0 }, "priceGross")).toBe(
+        "Cena brutto musi być większa od zera",
+      );
+    });
+
+    it("reject negatives", () => {
+      expect(firstPricingError({ priceNet: -1 }, "priceNet")).toBe(
+        "Cena netto musi być większa od zera",
+      );
+    });
+
+    it("accept a cent, and anything above it", () => {
+      expect(firstPricingError({ priceNet: 0.01 }, "priceNet")).toBeUndefined();
+      expect(
+        firstPricingError({ priceNet: 1_000_000 }, "priceNet"),
+      ).toBeUndefined();
+    });
+
+    it("shows the required message first when a field is empty", () => {
+      // Both checks see null; only the first one is meant to complain about it.
+      const issues = productPricingSchema
+        .safeParse({ ...VALID_PRICING, priceNet: null })
+        .error?.issues.filter((issue) => issue.path[0] === "priceNet");
+
+      expect(issues).toHaveLength(1);
+      expect(issues?.[0]?.message).toBe("Cena netto jest wymagana");
+    });
+  });
+});
+
+describe("isStepComplete", () => {
+  const FILLED = { ...PRODUCT_FORM_DEFAULTS, ...VALID, ...VALID_PRICING };
+
+  it("reports a blank form incomplete", () => {
+    expect(isStepComplete(1, PRODUCT_FORM_DEFAULTS)).toBe(false);
+    expect(isStepComplete(2, PRODUCT_FORM_DEFAULTS)).toBe(false);
+  });
+
+  it("judges only the step it is asked about", () => {
+    expect(isStepComplete(1, { ...PRODUCT_FORM_DEFAULTS, ...VALID })).toBe(true);
+    expect(isStepComplete(2, { ...PRODUCT_FORM_DEFAULTS, ...VALID })).toBe(false);
+
+    expect(isStepComplete(1, { ...PRODUCT_FORM_DEFAULTS, ...VALID_PRICING })).toBe(
+      false,
+    );
+    expect(isStepComplete(2, { ...PRODUCT_FORM_DEFAULTS, ...VALID_PRICING })).toBe(
+      true,
+    );
+  });
+
+  it("reports the unbuilt step incomplete however full the form is", () => {
+    expect(isStepComplete(3, FILLED)).toBe(false);
   });
 });
