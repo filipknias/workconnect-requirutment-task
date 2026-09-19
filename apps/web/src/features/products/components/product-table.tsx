@@ -8,7 +8,7 @@ import {
 } from "@repo/ui/components/table";
 import { formatPrice } from "../utils/format-price";
 import type { ProductsPage } from "../types/product";
-import { formatPageCaption } from "../utils/product-labels";
+import { formatCategory, formatPageCaption } from "../utils/product-labels";
 import { ProductsEmptyState } from "./products-empty-state";
 import { ProductStatusBadge } from "./product-status-badge";
 import { ProductsPagination } from "./products-pagination";
@@ -56,10 +56,10 @@ export function ProductTable({ products, page, totalPages, total }: ProductsPage
                 {product.sku}
               </TableCell>
               <TableCell className={`${CELL} text-neutral-500`}>
-                {product.category}
+                {formatCategory(product.category)}
               </TableCell>
               <TableCell className={`${CELL} font-medium text-neutral-950`}>
-                {formatPrice(product.price)}
+                {formatPrice(product.price, product.currency)}
               </TableCell>
               <TableCell className={CELL}>
                 <ProductStatusBadge status={product.status} />

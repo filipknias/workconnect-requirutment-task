@@ -8,7 +8,7 @@ import {
 } from "@repo/ui/components/card";
 import { formatPrice } from "../utils/format-price";
 import type { ProductsPage } from "../types/product";
-import { formatPageCaption } from "../utils/product-labels";
+import { formatCategory, formatPageCaption } from "../utils/product-labels";
 import { ProductsEmptyState } from "./products-empty-state";
 import { ProductStatusBadge } from "./product-status-badge";
 import { ProductsPagination } from "./products-pagination";
@@ -64,8 +64,8 @@ export function ProductCardList({ products, page, totalPages, total }: ProductsP
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-3 gap-1 rounded-[9px] bg-neutral-100 p-3">
-                  <Stat label="Kategoria" value={product.category} />
-                  <Stat label="Cena brutto" value={formatPrice(product.price)} emphasis />
+                  <Stat label="Kategoria" value={formatCategory(product.category)} />
+                  <Stat label="Cena brutto" value={formatPrice(product.price, product.currency)} emphasis />
                   <Stat label="Magazyn" value={product.stock ?? "—"} />
                 </div>
               </CardContent>

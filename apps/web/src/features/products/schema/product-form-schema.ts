@@ -5,9 +5,9 @@ import {
 } from "@/features/products/data/product-options";
 
 /**
- * Step 1 ("Informacje / Dane podstawowe") of the add-product wizard. Steps 2
- * and 3 get their own schemas when they are built; nothing here assumes it is
- * the whole product.
+ * Step 1 ("Informacje / Dane podstawowe") of the add-product wizard. Each step
+ * owns its own schema and describes only its own fields; `PRODUCT_FORM_DEFAULTS`
+ * at the bottom is where the three meet.
  *
  * Keys are English and match `Product` in `../types/product.ts`, so a later
  * step can merge this straight into one. Messages are Polish because they are
@@ -108,23 +108,125 @@ export const PRODUCT_PRICING_DEFAULTS: ProductPricingValues = {
   currency: PRODUCT_CURRENCIES[0]!.value,
 };
 
+/**
+ * Step 3 ("Dostępność / Stany magazynowe").
+ *
+ * Flat rather than a discriminated union, and every rule that depends on
+ * another field lives in the `.check` below. Two reasons: the three quantity
+ * boxes all store `number | null`, the same way a price does, and a value
+ * hidden by an unticked checkbox has to stay *unvalidated* rather than be
+ * cleared — see `availabilityIssues`.
+ */
+export const productAvailabilitySchema = z
+  .object({
+    /**
+     * The switch, and the only thing `status` is derived from. A product can
+     * be marked available with nothing on the shelf: the two answer different
+     * questions and cross-checking them would override what was just chosen.
+     */
+    available: z.boolean(),
+    /** The checkbox. It gates `stockQuantity` and nothing else. */
+    limited: z.boolean(),
+    stockQuantity: z.number().nullable(),
+    minQuantity: z.number().nullable(),
+    maxQuantity: z.number().nullable(),
+  })
+  .check((ctx) => {
+    for (const [field, message] of availabilityIssues(ctx.value)) {
+      ctx.issues.push({
+        code: "custom",
+        input: ctx.value[field],
+        path: [field],
+        message,
+      });
+    }
+  });
+
+export type ProductAvailabilityValues = z.infer<typeof productAvailabilitySchema>;
+
+/** The frame fills both limit boxes in, so they are defaults rather than placeholders — and the switch is drawn on. */
+export const PRODUCT_AVAILABILITY_DEFAULTS: ProductAvailabilityValues = {
+  available: true,
+  limited: false,
+  stockQuantity: null,
+  minQuantity: 1,
+  maxQuantity: 10,
+};
+
+/** `max >= min`, not `>`: a product you may buy exactly one of is a real product. */
+const MAX_BELOW_MIN = "Maksymalna ilość nie może być mniejsza od minimalnej";
+
+type AvailabilityField = "stockQuantity" | "minQuantity" | "maxQuantity";
+
+/**
+ * Every problem with a step-3 value, in the order the fields should say them.
+ *
+ * Split out of the schema because the order is the whole point: the form shows
+ * the first message a field has, so "required" is reported before "must be a
+ * whole number" before the bound, and the cross-field rule comes last.
+ *
+ * `stockQuantity` is checked only while `limited` is on. That is what lets the
+ * field keep what was typed when the checkbox is unticked — nothing clears the
+ * value, so re-ticking restores it, and an invalid number nobody can see can
+ * never be the reason "Zapisz produkt" is dead.
+ */
+function availabilityIssues(
+  values: ProductAvailabilityValues,
+): [field: AvailabilityField, message: string][] {
+  const issues: [AvailabilityField, string][] = [];
+
+  const check = (field: AvailabilityField, label: string, minimum: number) => {
+    const value = values[field];
+
+    if (value === null) issues.push([field, `${label} jest wymagana`]);
+    else if (!Number.isInteger(value))
+      issues.push([field, `${label} musi być liczbą całkowitą`]);
+    else if (value < minimum)
+      issues.push([
+        field,
+        minimum === 0
+          ? `${label} nie może być ujemna`
+          : `${label} musi wynosić co najmniej ${minimum}`,
+      ]);
+  };
+
+  if (values.limited) check("stockQuantity", "Ilość na magazynie", 0);
+  check("minQuantity", "Minimalna ilość", 1);
+  check("maxQuantity", "Maksymalna ilość", 1);
+
+  const { minQuantity, maxQuantity } = values;
+  if (minQuantity !== null && maxQuantity !== null && maxQuantity < minQuantity) {
+    // Mirrored onto both boxes on purpose. A field keeps its message hidden
+    // until it has been blurred once (see `use-field-presentation.ts`) and both
+    // of these start out prefilled — so an issue attached only to the maximum
+    // would stay invisible to someone who edits the minimum alone, leaving
+    // "Zapisz produkt" dead with nothing on screen explaining why.
+    issues.push(["minQuantity", MAX_BELOW_MIN], ["maxQuantity", MAX_BELOW_MIN]);
+  }
+
+  return issues;
+}
+
 /** Everything the wizard collects, and what it starts out holding. */
 export const PRODUCT_FORM_DEFAULTS = {
   ...PRODUCT_INFO_DEFAULTS,
   ...PRODUCT_PRICING_DEFAULTS,
+  ...PRODUCT_AVAILABILITY_DEFAULTS,
 };
 
 export type ProductFormValues = typeof PRODUCT_FORM_DEFAULTS;
 
-/**
- * What each step validates against, indexed by its 1-based number. Step 3 has
- * no schema yet, which is what makes `isStepComplete` report it incomplete.
- */
-const STEP_SCHEMAS = [productInfoSchema, productPricingSchema];
+/** What each step validates against, indexed by its 1-based number. */
+const STEP_SCHEMAS = [
+  productInfoSchema,
+  productPricingSchema,
+  productAvailabilitySchema,
+];
 
 /**
  * The schema the wizard should be validating against while `step` is on
- * screen, or `undefined` for a step that has no panel yet.
+ * screen, or `undefined` past the last step — which is also how the footer
+ * knows it is showing the last one.
  */
 export function stepSchema(step: number) {
   return STEP_SCHEMAS[step - 1];

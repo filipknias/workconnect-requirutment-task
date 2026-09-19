@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from "@repo/ui/components/dialog";
 import { FieldGroup } from "@repo/ui/components/field";
+import { Separator } from "@repo/ui/components/separator";
 import { Stepper, type StepperStep } from "@repo/ui/components/stepper";
 import { ArrowLeftIcon, ArrowRightIcon, PlusIcon, XIcon } from "lucide-react";
 import type { StandardSchemaV1 } from "@tanstack/react-form";
@@ -57,15 +58,29 @@ const CONTENT_CLASS =
   "light-surface top-0 right-0 bottom-0 left-0 max-h-none w-full max-w-none translate-x-0 translate-y-0 grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-0 rounded-none p-0 ring-0 sm:top-1/2 sm:right-auto sm:bottom-auto sm:left-1/2 sm:max-h-[85vh] sm:w-[calc(100%-2rem)] sm:max-w-[720px] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:ring-1";
 
 /**
- * The trigger and the "Dodaj nowy produkt" wizard. Steps 1 and 2 are built;
- * step 3 is drawn in the stepper but has no panel yet.
+ * The trigger and the "Dodaj nowy produkt" wizard, all three steps of it.
+ *
+ * `onSubmit` is handed values that have already passed every step's schema —
+ * the dialog collects and validates, the caller decides what a product is for.
+ * It fires before the dialog closes, so a handler can read the form state it
+ * was given without racing the unmount.
+ *
+ * Controlled for exactly that reason: an uncontrolled `Dialog` would have to
+ * be closed from a `DialogClose` wrapped around the save button, which would
+ * close it whether or not the wizard was finished.
  *
  * `disablePointerDismissal` — a stray click on the backdrop should not throw
  * away a half-filled form. The X and Escape still close it.
  */
-export function AddProductDialog() {
+export function AddProductDialog({
+  onSubmit,
+}: {
+  onSubmit: (values: ProductFormValues) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Dialog disablePointerDismissal>
+    <Dialog open={open} onOpenChange={setOpen} disablePointerDismissal>
       <DialogTrigger
         render={
           <Button className="h-9 shrink-0 gap-1.5 rounded-full bg-[#2563eb] px-4 text-neutral-50 hover:bg-[#2563eb]/80">
@@ -90,13 +105,22 @@ export function AddProductDialog() {
             </Button>
           }
         />
-        <AddProductWizard />
+        <AddProductWizard
+          onSubmit={(values) => {
+            onSubmit(values);
+            setOpen(false);
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
 }
 
-function AddProductWizard() {
+function AddProductWizard({
+  onSubmit,
+}: {
+  onSubmit: (values: ProductFormValues) => void;
+}) {
   // Everything stateful in this component lives *inside* DialogContent on
   // purpose. Base UI's DialogPortal defaults to keepMounted={false}, so closing
   // the dialog unmounts this component and the form values and the current step
@@ -123,11 +147,11 @@ function AddProductWizard() {
     form.setFieldValue("vatRate", next.vatRate);
   };
 
-  // Where "Dalej" leads, or undefined when there is nowhere to go: step 3 is
-  // drawn in the stepper but has no schema and no panel, so the button on step
-  // 2 stays inert however complete the prices are. Building step 3 turns it on
-  // by adding its schema, with nothing to change here.
-  const nextStep = stepSchema(step + 1) === undefined ? undefined : step + 1;
+  // The last step is the one with nothing after it to validate. Derived from
+  // the schemas rather than from STEPS so the footer can never offer to move
+  // on to a step that has no panel: a step with no schema reports itself
+  // incomplete, which leaves the button inert instead.
+  const isLastStep = stepSchema(step + 1) === undefined;
 
   return (
     <>
@@ -147,6 +171,7 @@ function AddProductWizard() {
       <div className="overflow-y-auto px-4 pt-5 pb-8">
         {step === 1 && <ProductInfoStep form={form} />}
         {step === 2 && <ProductPricingStep form={form} onEdit={editPricing} />}
+        {step === 3 && <ProductAvailabilityStep form={form} />}
       </div>
 
       <DialogFooter className="mx-0 mb-0 flex-row justify-between rounded-none border-neutral-200 bg-neutral-50 px-4 py-4 sm:justify-between sm:rounded-b-xl">
@@ -174,15 +199,25 @@ function AddProductWizard() {
         <form.Subscribe selector={(state) => isStepComplete(step, state.values)}>
           {(complete) => (
             <Button
-              disabled={!complete || nextStep === undefined}
+              disabled={!complete}
               focusableWhenDisabled
               onClick={() => {
-                if (nextStep !== undefined) setStep(nextStep);
+                if (!complete) return;
+                if (isLastStep) onSubmit(form.state.values);
+                else setStep(step + 1);
               }}
               className="ml-auto h-10 gap-2 rounded-full bg-blue-600 px-5 text-white hover:bg-blue-600/90 aria-disabled:cursor-not-allowed aria-disabled:bg-blue-600/60"
             >
-              Dalej
-              <ArrowRightIcon />
+              {/* The frame gives the save button no arrow — it does not lead
+                  anywhere. */}
+              {isLastStep ? (
+                "Zapisz produkt"
+              ) : (
+                <>
+                  Dalej
+                  <ArrowRightIcon />
+                </>
+              )}
             </Button>
           )}
         </form.Subscribe>
@@ -206,8 +241,9 @@ function useWizardForm(step: number) {
     // Everything validates under the `change` cause, including on blur — see
     // `useFieldPresentation`, which also decides when a message is allowed to
     // be seen. Only the step on screen is validated: a step-1 message has
-    // nowhere to appear while step 2 is showing. There is no `onSubmit`:
-    // nothing is submitted until step 3 exists.
+    // nowhere to appear while step 2 is showing. There is no `onSubmit` here
+    // either — there is no <form> element, and the save button is gated on the
+    // same parse every step's "Dalej" is, so it hands the values over itself.
     validators: {
       // The cast is about the declaration, not the behaviour. A step's schema
       // describes only its own fields, so its inferred input type is missing
@@ -359,6 +395,72 @@ function ProductPricingStep({
               required
             />
           )}
+        </form.AppField>
+      </div>
+    </FieldGroup>
+  );
+}
+
+/**
+ * Step 3 — "Dostępność / Stany magazynowe".
+ *
+ * The frame is a stack of rows separated by hairlines: the switch, the
+ * checkbox, then "Limity koszyka" over a two-column row that stacks on a
+ * phone. `gap-4` rather than `FieldGroup`'s default 5 because the separators
+ * carry the spacing between sections here.
+ *
+ * "Ilość na magazynie" is not in the frame. The checkbox beside it is labelled
+ * "Produkt limitowany" and gates nothing otherwise, and the listing has a
+ * "Magazyn" column with no way to fill it — so the box it reveals is what that
+ * checkbox is for.
+ */
+function ProductAvailabilityStep({ form }: { form: WizardForm }) {
+  return (
+    <FieldGroup className="gap-4">
+      <form.AppField name="available">
+        {(field) => <field.SwitchField label="Produkt jest dostępny" />}
+      </form.AppField>
+
+      <Separator className="bg-neutral-200" />
+
+      <form.AppField name="limited">
+        {(field) => <field.CheckboxField label="Produkt limitowany" />}
+      </form.AppField>
+
+      {/* Subscribed rather than read off `form.state`: the panel has to
+          re-render when the box is ticked, and nothing else here does. The
+          field is unmounted while it is off, which is deliberate — the value
+          stays in the form and is restored on re-tick, and the step's schema
+          ignores it meanwhile, so a number nobody can see can never be why
+          "Zapisz produkt" is dead. */}
+      <form.Subscribe selector={(state) => state.values.limited}>
+        {(limited) =>
+          limited && (
+            <div className="grid gap-5 md:grid-cols-2">
+              <form.AppField name="stockQuantity">
+                {(field) => (
+                  <field.NumberField
+                    label="Ilość na magazynie"
+                    placeholder="0"
+                    required
+                  />
+                )}
+              </form.AppField>
+            </div>
+          )
+        }
+      </form.Subscribe>
+
+      <Separator className="bg-neutral-200" />
+
+      <h3 className="text-base font-medium text-neutral-950">Limity koszyka</h3>
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <form.AppField name="minQuantity">
+          {(field) => <field.NumberField label="Minimalna ilość" required />}
+        </form.AppField>
+        <form.AppField name="maxQuantity">
+          {(field) => <field.NumberField label="Maksymalna ilość" required />}
         </form.AppField>
       </div>
     </FieldGroup>

@@ -33,6 +33,7 @@ export function TextField({
       <Input
         id={id}
         value={field.state.value}
+        className="h-10"
         placeholder={placeholder}
         required={required}
         autoComplete={autoComplete}

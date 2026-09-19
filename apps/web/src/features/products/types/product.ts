@@ -1,15 +1,39 @@
 export type ProductStatus = "available" | "unavailable";
 
+/**
+ * A catalogue entry, as the add-product wizard produces one. Every field is
+ * required: the wizard collects all of them, so an optional key here would
+ * only ever describe a row nobody can create.
+ *
+ * `category`, `manufacturer` and `features` hold slugs (`"komputery"`,
+ * `"apple"`, `"usb-c"`) rather than the Polish labels beside them — see
+ * `../data/product-options.ts`. Anything that shows one resolves it through
+ * `../utils/product-labels.ts`.
+ */
 export type Product = {
   id: string;
   name: string;
   sku: string;
+  description: string;
+  /** Slug from `PRODUCT_MANUFACTURERS`. */
+  manufacturer: string;
+  /** Slug from `PRODUCT_CATEGORIES`. */
   category: string;
-  /** Gross price in PLN. */
+  /** Slugs from `PRODUCT_FEATURES`; empty is a normal product. */
+  features: string[];
+  priceNet: number;
+  /** Gross price, in `currency` — the one the listing shows. */
   price: number;
+  /** A percentage: `23` means 23%. */
+  vatRate: number;
+  /** ISO code, as `PRODUCT_CURRENCIES` stores it. */
+  currency: string;
   status: ProductStatus;
   /** Units on hand, or `null` when the product is not stock-tracked. */
   stock: number | null;
+  /** Cart limits — how few, and how many, may be bought at once. */
+  minQuantity: number;
+  maxQuantity: number;
 };
 
 /** One page of the catalogue, as `getProductsPage` reports it. */

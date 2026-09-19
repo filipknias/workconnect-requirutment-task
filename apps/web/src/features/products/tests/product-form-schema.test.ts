@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   isStepComplete,
+  PRODUCT_AVAILABILITY_DEFAULTS,
   PRODUCT_FORM_DEFAULTS,
   PRODUCT_INFO_DEFAULTS,
   PRODUCT_PRICING_DEFAULTS,
+  productAvailabilitySchema,
   productInfoSchema,
   productPricingSchema,
 } from "@/features/products/schema/product-form-schema";
@@ -204,8 +206,157 @@ describe("productPricingSchema", () => {
   });
 });
 
+/** And for step 3. */
+function firstAvailabilityError(
+  values: Partial<typeof PRODUCT_AVAILABILITY_DEFAULTS>,
+  field: keyof typeof PRODUCT_AVAILABILITY_DEFAULTS,
+): string | undefined {
+  const result = productAvailabilitySchema.safeParse({
+    ...PRODUCT_AVAILABILITY_DEFAULTS,
+    ...values,
+  });
+  return result.error?.issues.find((issue) => issue.path[0] === field)?.message;
+}
+
+describe("productAvailabilitySchema", () => {
+  it("accepts the defaults the frame draws — available, unlimited, 1 to 10", () => {
+    expect(PRODUCT_AVAILABILITY_DEFAULTS).toEqual({
+      available: true,
+      limited: false,
+      stockQuantity: null,
+      minQuantity: 1,
+      maxQuantity: 10,
+    });
+    expect(
+      productAvailabilitySchema.safeParse(PRODUCT_AVAILABILITY_DEFAULTS).success,
+    ).toBe(true);
+  });
+
+  describe("stockQuantity", () => {
+    it("is ignored entirely while the product is not limited", () => {
+      expect(
+        firstAvailabilityError({ limited: false, stockQuantity: null }, "stockQuantity"),
+      ).toBeUndefined();
+      // The value a tick-then-untick leaves behind cannot block the step.
+      expect(
+        firstAvailabilityError({ limited: false, stockQuantity: -4 }, "stockQuantity"),
+      ).toBeUndefined();
+      expect(
+        firstAvailabilityError({ limited: false, stockQuantity: 2.5 }, "stockQuantity"),
+      ).toBeUndefined();
+    });
+
+    it("is required as soon as it is", () => {
+      expect(
+        firstAvailabilityError({ limited: true, stockQuantity: null }, "stockQuantity"),
+      ).toBe("Ilość na magazynie jest wymagana");
+    });
+
+    it("has to be a whole number", () => {
+      expect(
+        firstAvailabilityError({ limited: true, stockQuantity: 2.5 }, "stockQuantity"),
+      ).toBe("Ilość na magazynie musi być liczbą całkowitą");
+    });
+
+    it("allows zero — an empty shelf is a real answer — but not less", () => {
+      expect(
+        firstAvailabilityError({ limited: true, stockQuantity: 0 }, "stockQuantity"),
+      ).toBeUndefined();
+      expect(
+        firstAvailabilityError({ limited: true, stockQuantity: -1 }, "stockQuantity"),
+      ).toBe("Ilość na magazynie nie może być ujemna");
+    });
+  });
+
+  describe("cart limits", () => {
+    it("are both required", () => {
+      expect(firstAvailabilityError({ minQuantity: null }, "minQuantity")).toBe(
+        "Minimalna ilość jest wymagana",
+      );
+      expect(firstAvailabilityError({ maxQuantity: null }, "maxQuantity")).toBe(
+        "Maksymalna ilość jest wymagana",
+      );
+    });
+
+    it("are both whole numbers", () => {
+      expect(firstAvailabilityError({ minQuantity: 1.5 }, "minQuantity")).toBe(
+        "Minimalna ilość musi być liczbą całkowitą",
+      );
+      expect(firstAvailabilityError({ maxQuantity: 9.5 }, "maxQuantity")).toBe(
+        "Maksymalna ilość musi być liczbą całkowitą",
+      );
+    });
+
+    it("both start at one — zero of something is not a cart limit", () => {
+      expect(firstAvailabilityError({ minQuantity: 0 }, "minQuantity")).toBe(
+        "Minimalna ilość musi wynosić co najmniej 1",
+      );
+      expect(
+        firstAvailabilityError({ minQuantity: 1, maxQuantity: 0 }, "maxQuantity"),
+      ).toBe("Maksymalna ilość musi wynosić co najmniej 1");
+    });
+
+    it("allow max === min, for a buy-exactly-one product", () => {
+      expect(
+        productAvailabilitySchema.safeParse({
+          ...PRODUCT_AVAILABILITY_DEFAULTS,
+          minQuantity: 1,
+          maxQuantity: 1,
+        }).success,
+      ).toBe(true);
+    });
+
+    it("reject a maximum below the minimum, and say so on both boxes", () => {
+      const message = "Maksymalna ilość nie może być mniejsza od minimalnej";
+
+      expect(
+        firstAvailabilityError({ minQuantity: 5, maxQuantity: 2 }, "minQuantity"),
+      ).toBe(message);
+      expect(
+        firstAvailabilityError({ minQuantity: 5, maxQuantity: 2 }, "maxQuantity"),
+      ).toBe(message);
+    });
+
+    it("says nothing about the order while either box is still empty", () => {
+      expect(
+        firstAvailabilityError({ minQuantity: null, maxQuantity: 2 }, "maxQuantity"),
+      ).toBeUndefined();
+      expect(
+        firstAvailabilityError({ minQuantity: 5, maxQuantity: null }, "minQuantity"),
+      ).toBeUndefined();
+    });
+
+    it("shows a box's own problem before the cross-field one", () => {
+      // 0 is both below the bound and below the minimum; only the first
+      // message is the one that field should be showing.
+      expect(
+        firstAvailabilityError({ minQuantity: 5, maxQuantity: 0 }, "maxQuantity"),
+      ).toBe("Maksymalna ilość musi wynosić co najmniej 1");
+    });
+  });
+
+  describe("available", () => {
+    it("is free of the stock level — an available product may have none", () => {
+      expect(
+        productAvailabilitySchema.safeParse({
+          ...PRODUCT_AVAILABILITY_DEFAULTS,
+          available: true,
+          limited: true,
+          stockQuantity: 0,
+        }).success,
+      ).toBe(true);
+    });
+  });
+});
+
 describe("isStepComplete", () => {
-  const FILLED = { ...PRODUCT_FORM_DEFAULTS, ...VALID, ...VALID_PRICING };
+  const VALID_AVAILABILITY = PRODUCT_AVAILABILITY_DEFAULTS;
+  const FILLED = {
+    ...PRODUCT_FORM_DEFAULTS,
+    ...VALID,
+    ...VALID_PRICING,
+    ...VALID_AVAILABILITY,
+  };
 
   it("reports a blank form incomplete", () => {
     expect(isStepComplete(1, PRODUCT_FORM_DEFAULTS)).toBe(false);
@@ -224,7 +375,17 @@ describe("isStepComplete", () => {
     );
   });
 
-  it("reports the unbuilt step incomplete however full the form is", () => {
-    expect(isStepComplete(3, FILLED)).toBe(false);
+  it("calls step three complete straight away — the frame ships it prefilled", () => {
+    expect(isStepComplete(3, PRODUCT_FORM_DEFAULTS)).toBe(true);
+    expect(isStepComplete(3, FILLED)).toBe(true);
+  });
+
+  it("holds step three back on a limit that does not make sense", () => {
+    expect(isStepComplete(3, { ...FILLED, maxQuantity: 0 })).toBe(false);
+    expect(isStepComplete(3, { ...FILLED, minQuantity: 20 })).toBe(false);
+  });
+
+  it("reports a step past the last one incomplete", () => {
+    expect(isStepComplete(4, FILLED)).toBe(false);
   });
 });

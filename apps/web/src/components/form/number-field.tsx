@@ -42,6 +42,7 @@ export function NumberField({
       <Input
         id={id}
         type="number"
+        className="h-10"
         // `step="any"`, not `step="0.01"`. The gross price is rounded to the
         // cent but a typed one is accepted at any precision, and `0.01` would
         // have the browser mark 19.999 `:invalid` while the schema calls it

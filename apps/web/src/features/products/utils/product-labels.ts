@@ -1,3 +1,5 @@
+import { PRODUCT_CATEGORIES } from "../data/product-options";
+
 /**
  * Polish counts take three forms. `total` is no longer hardcoded now that it
  * comes from `getProductsPage`, so the copy has to agree with it.
@@ -31,4 +33,16 @@ export function formatPageCaption({
     / /g,
     " ",
   );
+}
+
+/**
+ * The Polish label for a stored category slug.
+ *
+ * Products carry slugs, not copy — see `../types/product.ts` — so every view
+ * that prints a category goes through here. An unrecognised slug is shown as
+ * it is rather than blanked out: a row from a list this build no longer offers
+ * is still a row, and an empty cell would hide it.
+ */
+export function formatCategory(slug: string): string {
+  return PRODUCT_CATEGORIES.find((option) => option.value === slug)?.label ?? slug;
 }

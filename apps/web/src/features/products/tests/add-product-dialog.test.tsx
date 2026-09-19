@@ -1,10 +1,19 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AddProductDialog } from "@/features/products/components/add-product-dialog";
 
 function open() {
   return userEvent.setup();
+}
+
+/**
+ * Most of these tests never get as far as submitting, so the handler is a spy
+ * they can ignore. The ones that do read it back.
+ */
+function renderDialog(onSubmit = vi.fn()) {
+  render(<AddProductDialog onSubmit={onSubmit} />);
+  return onSubmit;
 }
 
 async function openDialog(user: ReturnType<typeof open>) {
@@ -32,6 +41,13 @@ async function goToStepTwo(user: ReturnType<typeof open>) {
   await user.click(screen.getByRole("button", { name: "Dalej" }));
 }
 
+/** Step two filled in, standing on step three. */
+async function goToStepThree(user: ReturnType<typeof open>) {
+  await goToStepTwo(user);
+  await user.type(screen.getByLabelText("Cena netto"), "100");
+  await user.click(screen.getByRole("button", { name: "Dalej" }));
+}
+
 /** The step the stepper is showing as in progress. */
 function currentStep() {
   return screen
@@ -42,7 +58,7 @@ function currentStep() {
 describe("AddProductDialog", () => {
   it("opens from the trigger onto step one", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
@@ -58,7 +74,7 @@ describe("AddProductDialog", () => {
 
   it("renders the step-one fields the frame draws", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     expect(screen.getByLabelText("Nazwa produktu")).toHaveAttribute(
@@ -93,7 +109,7 @@ describe("AddProductDialog", () => {
 
   it("stays quiet while a field is being typed into, then explains on blur", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     const name = screen.getByLabelText("Nazwa produktu");
@@ -117,7 +133,7 @@ describe("AddProductDialog", () => {
 
   it("clears the message as soon as the field is fixed, without waiting for another blur", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     const sku = screen.getByLabelText("SKU produktu");
@@ -138,7 +154,7 @@ describe("AddProductDialog", () => {
 
   it("keeps SKU exactly as it was typed", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     const sku = screen.getByLabelText("SKU produktu");
@@ -149,7 +165,7 @@ describe("AddProductDialog", () => {
 
   it("picks a manufacturer from the dropdown", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     const trigger = screen.getByLabelText("Producent");
@@ -163,7 +179,7 @@ describe("AddProductDialog", () => {
 
   it("toggles feature chips on and off", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     const bluetooth = screen.getByRole("checkbox", { name: "Bluetooth" });
@@ -181,7 +197,7 @@ describe("AddProductDialog", () => {
 
   it("says nothing when every chip is turned back off", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     const bluetooth = screen.getByRole("checkbox", { name: "Bluetooth" });
@@ -194,7 +210,7 @@ describe("AddProductDialog", () => {
 
   it("lets step one through with no chip ticked at all", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     await fillStepOne(user);
@@ -209,7 +225,7 @@ describe("AddProductDialog", () => {
 
   it("starts over when it is closed and reopened", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     await user.type(screen.getByLabelText("Nazwa produktu"), "MacBook Pro 14");
@@ -238,7 +254,7 @@ describe("AddProductDialog", () => {
 
   it("closes on Escape but not on a backdrop click", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     const dialog = await openDialog(user);
 
     await user.click(document.querySelector("[data-slot=dialog-overlay]")!);
@@ -250,7 +266,7 @@ describe("AddProductDialog", () => {
 
   it("puts the close button first in the tab order", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     // It is rendered before the fields, so it is where entry focus lands and
@@ -264,7 +280,7 @@ describe("AddProductDialog", () => {
 
   it("returns focus to the trigger when it closes", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     await user.keyboard("{Escape}");
@@ -274,7 +290,7 @@ describe("AddProductDialog", () => {
 
   it("marks the required fields as required, and the optional one as not", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     expect(screen.getByLabelText("Nazwa produktu")).toBeRequired();
@@ -292,7 +308,7 @@ describe("AddProductDialog", () => {
 
   it("explains a required field left empty, without waiting for anything to be typed", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     const name = screen.getByLabelText("Nazwa produktu");
@@ -306,7 +322,7 @@ describe("AddProductDialog", () => {
 
   it("keeps Dalej inert while step one is incomplete", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     const dalej = screen.getByRole("button", { name: "Dalej" });
@@ -324,7 +340,7 @@ describe("AddProductDialog", () => {
 
   it("keeps Dalej inert while step one is only half filled", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     await user.type(screen.getByLabelText("Nazwa produktu"), "MacBook Pro 14");
@@ -338,7 +354,7 @@ describe("AddProductDialog", () => {
 
   it("lights Dalej up once step one validates, and not before", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     await fillStepOne(user);
@@ -352,7 +368,7 @@ describe("AddProductDialog", () => {
 
   it("goes on to step two, and says step one is done", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     await goToStepTwo(user);
@@ -366,7 +382,7 @@ describe("AddProductDialog", () => {
 
   it("renders the step-two fields the frame draws", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
     await goToStepTwo(user);
 
@@ -389,7 +405,7 @@ describe("AddProductDialog", () => {
 
   it("fills in the gross price as the net one is typed", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
     await goToStepTwo(user);
 
@@ -400,7 +416,7 @@ describe("AddProductDialog", () => {
 
   it("works backwards from the gross price too", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
     await goToStepTwo(user);
 
@@ -411,7 +427,7 @@ describe("AddProductDialog", () => {
 
   it("recalculates both prices when the VAT rate changes", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
     await goToStepTwo(user);
 
@@ -425,7 +441,7 @@ describe("AddProductDialog", () => {
 
   it("empties one price when the other is cleared", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
     await goToStepTwo(user);
 
@@ -437,7 +453,7 @@ describe("AddProductDialog", () => {
 
   it("complains about a price left empty, and about a zero", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
     await goToStepTwo(user);
 
@@ -453,7 +469,7 @@ describe("AddProductDialog", () => {
 
   it("keeps what was typed when Wstecz goes back", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
     await goToStepTwo(user);
 
@@ -474,7 +490,7 @@ describe("AddProductDialog", () => {
 
   it("has no Wstecz on step one", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
 
     expect(
@@ -482,21 +498,212 @@ describe("AddProductDialog", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("leaves step two's Dalej inert, however complete the prices are", async () => {
+  it("goes on to step three once the prices are in", async () => {
     const user = open();
-    render(<AddProductDialog />);
+    renderDialog();
     await openDialog(user);
     await goToStepTwo(user);
 
-    await user.type(screen.getByLabelText("Cena netto"), "100");
-
-    // Step three has no panel to go to. An enabled button that ignores the
-    // click would be worse than one that says it is not ready.
     const dalej = screen.getByRole("button", { name: "Dalej" });
     expect(dalej).toHaveAttribute("aria-disabled", "true");
-    expect(dalej).not.toBeDisabled();
+
+    await user.type(screen.getByLabelText("Cena netto"), "100");
+    expect(dalej).toHaveAttribute("aria-disabled", "false");
 
     await user.click(dalej);
-    expect(currentStep()).toHaveTextContent("Cena");
+    expect(currentStep()).toHaveTextContent("Dostępność");
+  });
+
+  it("renders the step-three controls the frame draws, prefilled", async () => {
+    const user = open();
+    renderDialog();
+    await openDialog(user);
+    await goToStepThree(user);
+
+    // The switch is drawn on and the limits are drawn filled in, so those are
+    // defaults rather than placeholders.
+    expect(screen.getByRole("switch", { name: "Produkt jest dostępny" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Produkt limitowany" })).not.toBeChecked();
+    expect(screen.getByText("Limity koszyka")).toBeInTheDocument();
+    expect(screen.getByLabelText("Minimalna ilość")).toHaveValue(1);
+    expect(screen.getByLabelText("Maksymalna ilość")).toHaveValue(10);
+  });
+
+  it("hides the stock field until the product is marked limited", async () => {
+    const user = open();
+    renderDialog();
+    await openDialog(user);
+    await goToStepThree(user);
+
+    expect(screen.queryByLabelText("Ilość na magazynie")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("checkbox", { name: "Produkt limitowany" }));
+    expect(screen.getByLabelText("Ilość na magazynie")).toBeInTheDocument();
+  });
+
+  it("keeps what was typed into the stock field across an untick", async () => {
+    const user = open();
+    renderDialog();
+    await openDialog(user);
+    await goToStepThree(user);
+
+    const limited = screen.getByRole("checkbox", { name: "Produkt limitowany" });
+    await user.click(limited);
+    await user.type(screen.getByLabelText("Ilość na magazynie"), "12");
+    await user.click(limited);
+    await user.click(limited);
+
+    expect(screen.getByLabelText("Ilość na magazynie")).toHaveValue(12);
+  });
+
+  it("does not let a hidden stock value hold the save button back", async () => {
+    const user = open();
+    renderDialog();
+    await openDialog(user);
+    await goToStepThree(user);
+
+    const limited = screen.getByRole("checkbox", { name: "Produkt limitowany" });
+    await user.click(limited);
+    // Emptied, which is invalid while the box is on screen...
+    await user.clear(screen.getByLabelText("Ilość na magazynie"));
+    expect(screen.getByRole("button", { name: "Zapisz produkt" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+
+    // ...and no longer anyone's problem once it is not.
+    await user.click(limited);
+    expect(screen.getByRole("button", { name: "Zapisz produkt" })).toHaveAttribute(
+      "aria-disabled",
+      "false",
+    );
+  });
+
+  it("says a maximum below the minimum on both boxes", async () => {
+    const user = open();
+    renderDialog();
+    await openDialog(user);
+    await goToStepThree(user);
+
+    const min = screen.getByLabelText("Minimalna ilość");
+    await user.clear(min);
+    await user.type(min, "20");
+    await user.tab();
+
+    // Mirrored: the message has to be visible to someone who only touched the
+    // minimum, and a field keeps quiet until it has been blurred once.
+    expect(
+      screen.getAllByText("Maksymalna ilość nie może być mniejsza od minimalnej"),
+    ).toHaveLength(1);
+    expect(min).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("button", { name: "Zapisz produkt" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+  });
+
+  it("accepts a product you may buy exactly one of", async () => {
+    const user = open();
+    renderDialog();
+    await openDialog(user);
+    await goToStepThree(user);
+
+    const max = screen.getByLabelText("Maksymalna ilość");
+    await user.clear(max);
+    await user.type(max, "1");
+    await user.tab();
+
+    expect(screen.getByRole("button", { name: "Zapisz produkt" })).toHaveAttribute(
+      "aria-disabled",
+      "false",
+    );
+  });
+
+  it("refuses a fractional quantity", async () => {
+    const user = open();
+    renderDialog();
+    await openDialog(user);
+    await goToStepThree(user);
+
+    const min = screen.getByLabelText("Minimalna ilość");
+    await user.clear(min);
+    await user.type(min, "1.5");
+    await user.tab();
+
+    expect(
+      screen.getByText("Minimalna ilość musi być liczbą całkowitą"),
+    ).toBeInTheDocument();
+  });
+
+  it("saves the whole wizard, closes, and hands the values over", async () => {
+    const user = open();
+    const onSubmit = renderDialog();
+    await openDialog(user);
+    await goToStepThree(user);
+
+    await user.click(screen.getByRole("checkbox", { name: "Produkt limitowany" }));
+    await user.type(screen.getByLabelText("Ilość na magazynie"), "12");
+    await user.click(screen.getByRole("button", { name: "Zapisz produkt" }));
+
+    expect(onSubmit).toHaveBeenCalledOnce();
+    expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({
+      name: "MacBook Pro 14",
+      sku: "MBP14M3PRO",
+      manufacturer: "apple",
+      category: "komputery",
+      features: ["bluetooth"],
+      priceNet: 100,
+      priceGross: 123,
+      vatRate: 23,
+      currency: "PLN",
+      available: true,
+      limited: true,
+      stockQuantity: 12,
+      minQuantity: 1,
+      maxQuantity: 10,
+    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("carries the switch over as it was left", async () => {
+    const user = open();
+    const onSubmit = renderDialog();
+    await openDialog(user);
+    await goToStepThree(user);
+
+    await user.click(screen.getByRole("switch", { name: "Produkt jest dostępny" }));
+    await user.click(screen.getByRole("button", { name: "Zapisz produkt" }));
+
+    expect(onSubmit.mock.calls[0]?.[0].available).toBe(false);
+  });
+
+  it("does not submit from an incomplete step three", async () => {
+    const user = open();
+    const onSubmit = renderDialog();
+    await openDialog(user);
+    await goToStepThree(user);
+
+    await user.clear(screen.getByLabelText("Minimalna ilość"));
+
+    const save = screen.getByRole("button", { name: "Zapisz produkt" });
+    expect(save).toHaveAttribute("aria-disabled", "true");
+    expect(save).not.toBeDisabled();
+
+    await user.click(save);
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("starts over after a save, not on the step it finished on", async () => {
+    const user = open();
+    renderDialog();
+    await openDialog(user);
+    await goToStepThree(user);
+    await user.click(screen.getByRole("button", { name: "Zapisz produkt" }));
+
+    await openDialog(user);
+
+    expect(currentStep()).toHaveTextContent("Informacje");
+    expect(screen.getByLabelText("Nazwa produktu")).toHaveValue("");
   });
 });

@@ -1,4 +1,5 @@
-import Link from "next/link";
+"use client";
+
 import {
   Pagination,
   PaginationContent,
@@ -7,7 +8,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@repo/ui/components/pagination";
-import { productPageHref } from "../utils/search-params";
+import { usePageLink } from "../hooks/use-page-link";
 
 const ITEM = "h-8 rounded-md text-sm font-medium text-neutral-950";
 /** The outline variant ships a `dark:bg-input/30` that would otherwise win over the blue. */
@@ -22,6 +23,7 @@ export function ProductsPagination({
   page: number;
   totalPages: number;
 }) {
+  const pageLink = usePageLink();
   const hasPrevious = page > 1;
   const hasNext = page < totalPages;
   const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -39,7 +41,7 @@ export function ProductsPagination({
             aria-label="Przejdź do poprzedniej strony"
             className={hasPrevious ? ITEM : SPENT}
             aria-disabled={hasPrevious ? undefined : true}
-            render={hasPrevious ? <Link href={productPageHref(previous)} /> : <span />}
+            render={hasPrevious ? <a {...pageLink(previous)} /> : <span />}
           />
         </PaginationItem>
 
@@ -48,7 +50,7 @@ export function ProductsPagination({
             <PaginationLink
               isActive={number === page}
               className={number === page ? ACTIVE : ITEM}
-              render={<Link href={productPageHref(number)} />}
+              render={<a {...pageLink(number)} />}
             >
               {number}
             </PaginationLink>
@@ -61,7 +63,7 @@ export function ProductsPagination({
             aria-label="Przejdź do następnej strony"
             className={hasNext ? ITEM : SPENT}
             aria-disabled={hasNext ? undefined : true}
-            render={hasNext ? <Link href={productPageHref(next)} /> : <span />}
+            render={hasNext ? <a {...pageLink(next)} /> : <span />}
           />
         </PaginationItem>
       </PaginationContent>

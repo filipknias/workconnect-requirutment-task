@@ -1,10 +1,12 @@
 "use client";
 
 import { createFormHook } from "@tanstack/react-form";
+import { CheckboxField } from "../checkbox-field";
 import { ChipGroupField } from "../chip-group-field";
 import { fieldContext, formContext } from "../context/field-context";
 import { NumberField } from "../number-field";
 import { SelectField } from "../select-field";
+import { SwitchField } from "../switch-field";
 import { TextField } from "../text-field";
 import { TextareaField } from "../textarea-field";
 
@@ -33,6 +35,8 @@ export const { useAppForm } = createFormHook({
     NumberField,
     SelectField,
     ChipGroupField,
+    SwitchField,
+    CheckboxField,
   },
   formComponents: {},
 });
