@@ -13,6 +13,22 @@ import { useFieldContext } from "../context/field-context";
 export type RevealErrorsOn = "blur" | "touch";
 
 /**
+ * What a bordered control looks like while it is complaining: the border goes
+ * red, and nothing else moves.
+ *
+ * It lives beside the rule that decides *when* a field may complain, because
+ * the two answer the same question and a second opinion about it is how a
+ * wizard ends up signalling one state three different ways. The controls that
+ * are not a bordered box — the switch, the tickbox, the chips — are already
+ * drawn for this in `@repo/ui` and do not take it.
+ *
+ * A border rather than the border-plus-ring the shared `Input` used to ship:
+ * the ring is three pixels of colour outside the box, and in the wizard's 2x2
+ * grids that reads as the field having grown.
+ */
+export const INVALID_BORDER = "aria-invalid:border-destructive";
+
+/**
  * Everything a bound field needs to present itself: the ids that tie its label,
  * control and error message together, and the one error message it should be
  * showing right now.

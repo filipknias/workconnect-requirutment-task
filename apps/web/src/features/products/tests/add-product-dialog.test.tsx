@@ -217,10 +217,9 @@ describe("AddProductDialog", () => {
     await user.click(screen.getByRole("checkbox", { name: "Bluetooth" }));
 
     expect(screen.getByRole("checkbox", { name: "Bluetooth" })).not.toBeChecked();
-    expect(screen.getByRole("button", { name: "Dalej" })).toHaveAttribute(
-      "aria-disabled",
-      "false",
-    );
+
+    await user.click(screen.getByRole("button", { name: "Dalej" }));
+    expect(currentStep()).toHaveTextContent("Cena");
   });
 
   it("starts over when it is closed and reopened", async () => {
@@ -320,50 +319,137 @@ describe("AddProductDialog", () => {
     ).toBeInTheDocument();
   });
 
-  it("keeps Dalej inert while step one is incomplete", async () => {
+  it("does not move on from an incomplete step one", async () => {
     const user = open();
     renderDialog();
     await openDialog(user);
 
+    // An ordinary button: reachable, pressable, and drawn no differently
+    // from the one that advances. Whether the step is finished is a fact
+    // about the fields, not about the button.
     const dalej = screen.getByRole("button", { name: "Dalej" });
-    expect(dalej).toHaveAttribute("aria-disabled", "true");
     expect(dalej).not.toBeDisabled();
+    expect(dalej).not.toHaveAttribute("aria-disabled");
 
     dalej.focus();
     expect(dalej).toHaveFocus();
 
-    // Clicking it does nothing — still step one, still open.
     await user.click(dalej);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(currentStep()).toHaveTextContent("Informacje");
   });
 
-  it("keeps Dalej inert while step one is only half filled", async () => {
+  it("says what is missing when Dalej is pressed", async () => {
+    const user = open();
+    renderDialog();
+    await openDialog(user);
+
+    // Nothing has been touched, so the whole step is still quiet.
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Dalej" }));
+
+    expect(screen.getByText("Nazwa produktu jest wymagana")).toBeInTheDocument();
+    expect(screen.getByText("SKU jest wymagane")).toBeInTheDocument();
+    expect(screen.getByText("Producent jest wymagany")).toBeInTheDocument();
+    expect(screen.getByText("Kategoria jest wymagana")).toBeInTheDocument();
+    // The optional ones stay quiet — they are not why the button is dead.
+    expect(screen.getByLabelText("Opis produktu")).not.toHaveAttribute(
+      "aria-invalid",
+    );
+  });
+
+  it("puts the cursor on the first field that is actually wrong", async () => {
+    const user = open();
+    renderDialog();
+    await openDialog(user);
+
+    await user.type(screen.getByLabelText("Nazwa produktu"), "MacBook Pro 14");
+    await user.click(screen.getByRole("button", { name: "Dalej" }));
+
+    // Name is filled in, so the first problem is the one below it.
+    expect(screen.getByLabelText("SKU produktu")).toHaveFocus();
+  });
+
+  it("reveals the step it is standing on, not the one behind it", async () => {
+    const user = open();
+    renderDialog();
+    await openDialog(user);
+    await goToStepTwo(user);
+
+    await user.click(screen.getByRole("button", { name: "Dalej" }));
+
+    expect(screen.getByText("Cena netto jest wymagana")).toBeInTheDocument();
+    expect(screen.getByLabelText("Cena netto")).toHaveFocus();
+    expect(currentStep()).toHaveTextContent("Cena");
+  });
+
+  it("explains an incomplete step three from the save button too", async () => {
+    const user = open();
+    const onSubmit = renderDialog();
+    await openDialog(user);
+    await goToStepThree(user);
+
+    const min = screen.getByLabelText("Minimalna ilość");
+    await user.clear(min);
+    await user.click(screen.getByRole("button", { name: "Zapisz produkt" }));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText("Minimalna ilość jest wymagana")).toBeInTheDocument();
+    expect(min).toHaveFocus();
+  });
+
+  it("clears the reveal again as the fields are put right", async () => {
+    const user = open();
+    renderDialog();
+    await openDialog(user);
+
+    await user.click(screen.getByRole("button", { name: "Dalej" }));
+    expect(screen.getByLabelText("Nazwa produktu")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+
+    await fillStepOne(user);
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Nazwa produktu")).not.toHaveAttribute(
+      "aria-invalid",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Dalej" }));
+    expect(currentStep()).toHaveTextContent("Cena");
+  });
+
+  it("holds step one back while it is only half filled, and says which half", async () => {
     const user = open();
     renderDialog();
     await openDialog(user);
 
     await user.type(screen.getByLabelText("Nazwa produktu"), "MacBook Pro 14");
     await user.type(screen.getByLabelText("SKU produktu"), "MBP14M3PRO");
+    await user.click(screen.getByRole("button", { name: "Dalej" }));
 
-    expect(screen.getByRole("button", { name: "Dalej" })).toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
+    expect(currentStep()).toHaveTextContent("Informacje");
+    expect(screen.getByText("Producent jest wymagany")).toBeInTheDocument();
+    expect(screen.getByLabelText("Producent")).toHaveFocus();
   });
 
-  it("lights Dalej up once step one validates, and not before", async () => {
+  it("looks the same whether or not the step is finished", async () => {
     const user = open();
     renderDialog();
     await openDialog(user);
 
+    const before = screen.getByRole("button", { name: "Dalej" }).className;
+
     await fillStepOne(user);
 
-    // Base UI keeps the attribute and flips it, rather than dropping it.
-    expect(screen.getByRole("button", { name: "Dalej" })).toHaveAttribute(
-      "aria-disabled",
-      "false",
-    );
+    // Nothing about the button moves — no dimming, no not-allowed cursor,
+    // nothing that would read as unavailable on a control that is not. It is
+    // a hand throughout, because it is pressable throughout.
+    expect(screen.getByRole("button", { name: "Dalej" }).className).toBe(before);
+    expect(before).not.toContain("cursor-not-allowed");
+    expect(before).toContain("cursor-pointer");
   });
 
   it("goes on to step two, and says step one is done", async () => {
@@ -505,10 +591,10 @@ describe("AddProductDialog", () => {
     await goToStepTwo(user);
 
     const dalej = screen.getByRole("button", { name: "Dalej" });
-    expect(dalej).toHaveAttribute("aria-disabled", "true");
+    await user.click(dalej);
+    expect(currentStep()).toHaveTextContent("Cena");
 
     await user.type(screen.getByLabelText("Cena netto"), "100");
-    expect(dalej).toHaveAttribute("aria-disabled", "false");
 
     await user.click(dalej);
     expect(currentStep()).toHaveTextContent("Dostępność");
@@ -558,30 +644,30 @@ describe("AddProductDialog", () => {
 
   it("does not let a hidden stock value hold the save button back", async () => {
     const user = open();
-    renderDialog();
+    const onSubmit = renderDialog();
     await openDialog(user);
     await goToStepThree(user);
 
+    const save = () => screen.getByRole("button", { name: "Zapisz produkt" });
     const limited = screen.getByRole("checkbox", { name: "Produkt limitowany" });
     await user.click(limited);
     // Emptied, which is invalid while the box is on screen...
     await user.clear(screen.getByLabelText("Ilość na magazynie"));
-    expect(screen.getByRole("button", { name: "Zapisz produkt" })).toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
+    await user.click(save());
+    expect(onSubmit).not.toHaveBeenCalled();
 
     // ...and no longer anyone's problem once it is not.
     await user.click(limited);
-    expect(screen.getByRole("button", { name: "Zapisz produkt" })).toHaveAttribute(
-      "aria-disabled",
-      "false",
-    );
+    await user.click(save());
+    expect(onSubmit).toHaveBeenCalledOnce();
+    // The emptied box went with the untick, rather than being saved as a zero.
+    expect(onSubmit.mock.calls[0]?.[0].limited).toBe(false);
+    expect(onSubmit.mock.calls[0]?.[0].stockQuantity).toBeNull();
   });
 
   it("says a maximum below the minimum on both boxes", async () => {
     const user = open();
-    renderDialog();
+    const onSubmit = renderDialog();
     await openDialog(user);
     await goToStepThree(user);
 
@@ -596,27 +682,25 @@ describe("AddProductDialog", () => {
       screen.getAllByText("Maksymalna ilość nie może być mniejsza od minimalnej"),
     ).toHaveLength(1);
     expect(min).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByRole("button", { name: "Zapisz produkt" })).toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
+
+    await user.click(screen.getByRole("button", { name: "Zapisz produkt" }));
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("accepts a product you may buy exactly one of", async () => {
     const user = open();
-    renderDialog();
+    const onSubmit = renderDialog();
     await openDialog(user);
     await goToStepThree(user);
 
     const max = screen.getByLabelText("Maksymalna ilość");
     await user.clear(max);
     await user.type(max, "1");
-    await user.tab();
+    await user.click(screen.getByRole("button", { name: "Zapisz produkt" }));
 
-    expect(screen.getByRole("button", { name: "Zapisz produkt" })).toHaveAttribute(
-      "aria-disabled",
-      "false",
-    );
+    expect(onSubmit).toHaveBeenCalledOnce();
+    expect(onSubmit.mock.calls[0]?.[0].maxQuantity).toBe(1);
   });
 
   it("refuses a fractional quantity", async () => {
@@ -686,12 +770,14 @@ describe("AddProductDialog", () => {
     await user.clear(screen.getByLabelText("Minimalna ilość"));
 
     const save = screen.getByRole("button", { name: "Zapisz produkt" });
-    expect(save).toHaveAttribute("aria-disabled", "true");
     expect(save).not.toBeDisabled();
+    expect(save).not.toHaveAttribute("aria-disabled");
 
     await user.click(save);
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+    // The press is not swallowed: it is answered.
+    expect(screen.getByText("Minimalna ilość jest wymagana")).toBeInTheDocument();
   });
 
   it("starts over after a save, not on the step it finished on", async () => {

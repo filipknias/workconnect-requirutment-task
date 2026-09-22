@@ -6,9 +6,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@repo/ui/components/card";
-import { formatPrice } from "../utils/format-price";
 import type { ProductsPage } from "../types/product";
-import { formatCategory, formatPageCaption } from "../utils/product-labels";
+import { formatPageCaption } from "../utils/product-labels";
+import { toProductRow } from "../utils/to-product-row";
 import { ProductsEmptyState } from "./products-empty-state";
 import { ProductStatusBadge } from "./product-status-badge";
 import { ProductsPagination } from "./products-pagination";
@@ -19,7 +19,7 @@ function Stat({
   emphasis,
 }: {
   label: string;
-  value: string | number;
+  value: string;
   emphasis?: boolean;
 }) {
   return (
@@ -42,31 +42,31 @@ export function ProductCardList({ products, page, totalPages, total }: ProductsP
     <div className="flex flex-col gap-6">
       {products.length === 0 ? (
         <Card className="rounded-[12px] bg-white ring-neutral-200 [--card-spacing:0px]">
-          <ProductsEmptyState />
+          <ProductsEmptyState page={page} />
         </Card>
       ) : (
         <div className="flex flex-col gap-2">
-          {products.map((product) => (
+          {products.map(toProductRow).map((row) => (
             <Card
-              key={product.id}
+              key={row.id}
               className="gap-2 rounded-[12px] bg-white ring-neutral-200 [--card-spacing:12px]"
             >
               <CardHeader>
                 <CardTitle className="text-base text-neutral-950">
-                  {product.name}
+                  {row.name}
                 </CardTitle>
                 <CardDescription className="text-xs text-neutral-500">
-                  {product.sku}
+                  {row.sku}
                 </CardDescription>
                 <CardAction className="self-center">
-                  <ProductStatusBadge status={product.status} />
+                  <ProductStatusBadge status={row.status} />
                 </CardAction>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-3 gap-1 rounded-[9px] bg-neutral-100 p-3">
-                  <Stat label="Kategoria" value={formatCategory(product.category)} />
-                  <Stat label="Cena brutto" value={formatPrice(product.price, product.currency)} emphasis />
-                  <Stat label="Magazyn" value={product.stock ?? "—"} />
+                  <Stat label="Kategoria" value={row.category} />
+                  <Stat label="Cena brutto" value={row.price} emphasis />
+                  <Stat label="Magazyn" value={row.stock} />
                 </div>
               </CardContent>
             </Card>

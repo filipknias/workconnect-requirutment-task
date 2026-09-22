@@ -24,9 +24,21 @@ describe("formatProductCount", () => {
 });
 
 describe("formatPageCaption", () => {
-  it("joins the caption with non-breaking spaces", () => {
+  it("binds each phrase with non-breaking spaces", () => {
     expect(formatPageCaption({ page: 1, totalPages: 2, total: 7 })).toBe(
-      "Strona 1 z 2 · 7 produktów",
+      "Strona 1 z 2 · 7 produktów",
     );
+  });
+
+  it("leaves the separator the caption's one break point", () => {
+    const caption = formatPageCaption({ page: 99, totalPages: 2, total: 7 });
+
+    // Anything else would be an unbreakable line under a stack narrower than
+    // it is.
+    expect(caption.split(" ")).toEqual([
+      "Strona\u00a099\u00a0z\u00a02",
+      "·",
+      "7\u00a0produktów",
+    ]);
   });
 });

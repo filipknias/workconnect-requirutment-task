@@ -18,6 +18,14 @@ function renderPagination(
   });
 }
 
+/** The numbered buttons, in the order they are drawn — arrows excluded. */
+function numberedPages() {
+  return screen
+    .getAllByRole("link")
+    .map((link) => link.textContent ?? "")
+    .filter((text) => /^\d+$/.test(text));
+}
+
 describe("ProductsPagination", () => {
   it("links page one back to the bare path, since nuqs drops the default", () => {
     renderPagination({ page: 2, totalPages: 2 });
@@ -36,7 +44,12 @@ describe("ProductsPagination", () => {
       "aria-current",
       "page",
     );
-    expect(screen.queryByRole("link", { name: /poprzedniej/ })).not.toBeInTheDocument();
+    // Still in the row, and saying why it does nothing. Dropping the role
+    // instead would leave a labelled control that is simply not there to
+    // anyone reading the page through.
+    const spent = screen.getByRole("link", { name: /poprzedniej/ });
+    expect(spent).toHaveAttribute("aria-disabled", "true");
+    expect(spent).not.toHaveAttribute("href");
     expect(screen.getByRole("link", { name: /następnej/ })).toHaveAttribute(
       "href",
       "/?page=2",
@@ -50,7 +63,9 @@ describe("ProductsPagination", () => {
       "href",
       "/?page=2",
     );
-    expect(screen.queryByRole("link", { name: /następnej/ })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /następnej/ }),
+    ).toHaveAttribute("aria-disabled", "true");
   });
 
   it("shows both arrow labels — the mobile frame is narrower than sm", () => {
@@ -58,6 +73,29 @@ describe("ProductsPagination", () => {
 
     expect(screen.getByText("Wstecz")).toBeVisible();
     expect(screen.getByText("Dalej")).toBeVisible();
+  });
+
+  it("numbers every page while they all fit, which is what the catalogue does today", () => {
+    renderPagination({ page: 1, totalPages: 2 });
+
+    expect(numberedPages()).toEqual(["1", "2"]);
+    expect(screen.queryByText("More pages")).not.toBeInTheDocument();
+  });
+
+  it("windows a long catalogue down to a fixed seven slots", () => {
+    const { rerender } = renderPagination({ page: 11, totalPages: 21 });
+
+    expect(numberedPages()).toEqual(["1", "10", "11", "12", "21"]);
+    expect(screen.getAllByText("More pages")).toHaveLength(2);
+
+    // Same width on every page, so the caption beside it never shifts.
+    rerender(<ProductsPagination page={1} totalPages={21} />);
+    expect(numberedPages()).toEqual(["1", "2", "3", "4", "5", "21"]);
+    expect(screen.getAllByText("More pages")).toHaveLength(1);
+
+    rerender(<ProductsPagination page={21} totalPages={21} />);
+    expect(numberedPages()).toEqual(["1", "17", "18", "19", "20", "21"]);
+    expect(screen.getAllByText("More pages")).toHaveLength(1);
   });
 
   it("writes the page to the URL instead of following the link", async () => {

@@ -16,9 +16,21 @@ export function formatProductCount(count: number): string {
   return `${count} produktów`;
 }
 
+/** Every space inside a phrase, so neither half of the caption can break. */
+function unbreakable(phrase: string): string {
+  return phrase.replace(/ /g, "\u00a0");
+}
+
 /**
- * `Strona 1 z 2 · 7 produktów`. Figma joins every word of this line with a
- * non-breaking space, so the caption never wraps mid-phrase.
+ * `Strona 1 z 2 · 7 produktów`. Figma joins the line with non-breaking spaces,
+ * which is about the phrases rather than the line: "Strona 1 z 2" and
+ * "7 produktów" each have to stay whole.
+ *
+ * Binding the whole string, separator included, left the caption nothing it
+ * could break on — in the mobile frame it sits under a stack narrower than it
+ * is, and an unbreakable line there overflows or squeezes the pagination
+ * beside it. The spaces around the `·` are ordinary, so the one place the
+ * line may wrap is between the two phrases.
  */
 export function formatPageCaption({
   page,
@@ -29,10 +41,7 @@ export function formatPageCaption({
   totalPages: number;
   total: number;
 }): string {
-  return `Strona ${page} z ${totalPages} · ${formatProductCount(total)}`.replace(
-    / /g,
-    " ",
-  );
+  return `${unbreakable(`Strona ${page} z ${totalPages}`)} · ${unbreakable(formatProductCount(total))}`;
 }
 
 /**

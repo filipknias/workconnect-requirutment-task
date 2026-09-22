@@ -3,7 +3,10 @@
 import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
 import { useFieldContext } from "./context/field-context";
-import { useFieldPresentation } from "./hooks/use-field-presentation";
+import {
+  INVALID_BORDER,
+  useFieldPresentation,
+} from "./hooks/use-field-presentation";
 
 /**
  * A single-line text field bound to the enclosing `form.AppField`. The call
@@ -33,7 +36,7 @@ export function TextField({
       <Input
         id={id}
         value={field.state.value}
-        className="h-10"
+        className={`h-10 ${INVALID_BORDER}`}
         placeholder={placeholder}
         required={required}
         autoComplete={autoComplete}

@@ -52,12 +52,21 @@ describe("ProductCardList", () => {
     );
   });
 
+  it("offers no way back from an empty catalogue, since page one is where it is", () => {
+    render(<ProductCardList {...getProductsPage(1, [])} />, { wrapper });
+
+    expect(screen.getByText("Brak produktów na tej stronie")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Wróć do pierwszej strony" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("captions the page below the stack", () => {
     render(<ProductCardList {...getProductsPage(2, PRODUCTS)} />, { wrapper });
 
     expect(
       screen.getByText(
-        "Strona 2 z 2 · 7 produktów",
+        "Strona 2 z 2 · 7 produktów",
         verbatim,
       ),
     ).toBeInTheDocument();

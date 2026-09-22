@@ -3,7 +3,10 @@
 import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
 import { Textarea } from "@repo/ui/components/textarea";
 import { useFieldContext } from "./context/field-context";
-import { useFieldPresentation } from "./hooks/use-field-presentation";
+import {
+  INVALID_BORDER,
+  useFieldPresentation,
+} from "./hooks/use-field-presentation";
 
 /**
  * A multi-line text field bound to the enclosing `form.AppField`.
@@ -32,7 +35,7 @@ export function TextareaField({
         // `field-sizing-content` from the shared Textarea would grow the box as
         // the description is typed and push the footer around; the frame draws
         // a fixed three-row box the user can drag taller.
-        className="field-sizing-fixed resize-y"
+        className={`field-sizing-fixed resize-y ${INVALID_BORDER}`}
         aria-invalid={invalid || undefined}
         aria-describedby={describedBy}
         onChange={(event) => field.handleChange(event.target.value)}

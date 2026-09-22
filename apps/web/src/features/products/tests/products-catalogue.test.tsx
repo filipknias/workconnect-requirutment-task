@@ -79,7 +79,7 @@ describe("ProductsCatalogue", () => {
 
     const verbatim = { normalizer: (value: string) => value };
     expect(
-      screen.getAllByText("Strona 1 z 2 · 8 produktów", verbatim),
+      screen.getAllByText("Strona 1 z 2 · 8 produktów", verbatim),
     ).toHaveLength(2);
   });
 

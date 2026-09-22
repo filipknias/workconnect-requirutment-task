@@ -67,8 +67,17 @@ describe("ProductTable", () => {
     );
     // The caption reports the page that was asked for.
     expect(
-      screen.getByText("Strona 99 z 2 · 7 produktów", verbatim),
+      screen.getByText("Strona 99 z 2 · 7 produktów", verbatim),
     ).toBeInTheDocument();
+  });
+
+  it("offers no way back from an empty catalogue, since page one is where it is", () => {
+    render(<ProductTable {...getProductsPage(1, [])} />, { wrapper });
+
+    expect(screen.getByText("Brak produktów na tej stronie")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Wróć do pierwszej strony" }),
+    ).not.toBeInTheDocument();
   });
 
   it("captions the page and links the other one", () => {
@@ -76,7 +85,7 @@ describe("ProductTable", () => {
 
     expect(
       screen.getByText(
-        "Strona 1 z 2 · 7 produktów",
+        "Strona 1 z 2 · 7 produktów",
         verbatim,
       ),
     ).toBeInTheDocument();

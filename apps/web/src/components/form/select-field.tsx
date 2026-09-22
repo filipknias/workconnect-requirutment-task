@@ -9,7 +9,10 @@ import {
   SelectValue,
 } from "@repo/ui/components/select";
 import { useFieldContext } from "./context/field-context";
-import { useFieldPresentation } from "./hooks/use-field-presentation";
+import {
+  INVALID_BORDER,
+  useFieldPresentation,
+} from "./hooks/use-field-presentation";
 
 export type SelectFieldOption<TValue = string> = {
   value: TValue;
@@ -75,7 +78,7 @@ export function SelectField<TValue extends string | number = string>({
       >
         <SelectTrigger
           id={id}
-          className="h-10 w-full"
+          className={`h-10 w-full ${INVALID_BORDER}`}
           aria-required={required || undefined}
           aria-invalid={invalid || undefined}
           aria-describedby={describedBy}

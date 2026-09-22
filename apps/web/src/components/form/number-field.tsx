@@ -3,7 +3,10 @@
 import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
 import { useFieldContext } from "./context/field-context";
-import { useFieldPresentation } from "./hooks/use-field-presentation";
+import {
+  INVALID_BORDER,
+  useFieldPresentation,
+} from "./hooks/use-field-presentation";
 
 /**
  * A numeric field bound to the enclosing `form.AppField`. The form stores a
@@ -42,7 +45,7 @@ export function NumberField({
       <Input
         id={id}
         type="number"
-        className="h-10"
+        className={`h-10 ${INVALID_BORDER}`}
         // `step="any"`, not `step="0.01"`. The gross price is rounded to the
         // cent but a typed one is accepted at any precision, and `0.01` would
         // have the browser mark 19.999 `:invalid` while the schema calls it

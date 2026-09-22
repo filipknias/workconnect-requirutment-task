@@ -6,9 +6,9 @@ import {
   TableHeader,
   TableRow,
 } from "@repo/ui/components/table";
-import { formatPrice } from "../utils/format-price";
 import type { ProductsPage } from "../types/product";
-import { formatCategory, formatPageCaption } from "../utils/product-labels";
+import { formatPageCaption } from "../utils/product-labels";
+import { toProductRow } from "../utils/to-product-row";
 import { ProductsEmptyState } from "./products-empty-state";
 import { ProductStatusBadge } from "./product-status-badge";
 import { ProductsPagination } from "./products-pagination";
@@ -43,29 +43,29 @@ export function ProductTable({ products, page, totalPages, total }: ProductsPage
           {products.length === 0 && (
             <TableRow className="border-neutral-200">
               <TableCell colSpan={COLUMNS.length} className="p-0">
-                <ProductsEmptyState />
+                <ProductsEmptyState page={page} />
               </TableCell>
             </TableRow>
           )}
-          {products.map((product) => (
-            <TableRow key={product.id} className="border-neutral-200">
+          {products.map(toProductRow).map((row) => (
+            <TableRow key={row.id} className="border-neutral-200">
               <TableCell className={`${CELL} font-medium text-neutral-950`}>
-                {product.name}
+                {row.name}
               </TableCell>
               <TableCell className={`${CELL} text-xs text-neutral-500`}>
-                {product.sku}
+                {row.sku}
               </TableCell>
               <TableCell className={`${CELL} text-neutral-500`}>
-                {formatCategory(product.category)}
+                {row.category}
               </TableCell>
               <TableCell className={`${CELL} font-medium text-neutral-950`}>
-                {formatPrice(product.price, product.currency)}
+                {row.price}
               </TableCell>
               <TableCell className={CELL}>
-                <ProductStatusBadge status={product.status} />
+                <ProductStatusBadge status={row.status} />
               </TableCell>
               <TableCell className={`${CELL} text-neutral-950`}>
-                {product.stock ?? "—"}
+                {row.stock}
               </TableCell>
             </TableRow>
           ))}

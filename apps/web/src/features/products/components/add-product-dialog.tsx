@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { Button } from "@repo/ui/components/button";
 import {
   Dialog,
@@ -11,29 +12,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@repo/ui/components/dialog";
-import { FieldGroup } from "@repo/ui/components/field";
-import { Separator } from "@repo/ui/components/separator";
 import { Stepper, type StepperStep } from "@repo/ui/components/stepper";
 import { ArrowLeftIcon, ArrowRightIcon, PlusIcon, XIcon } from "lucide-react";
-import type { StandardSchemaV1 } from "@tanstack/react-form";
-import { useAppForm } from "@/components/form/hooks/use-app-form";
+import { useWizardForm } from "@/features/products/hooks/use-wizard-form";
 import {
   isStepComplete,
-  PRODUCT_FORM_DEFAULTS,
   type ProductFormValues,
   stepSchema,
 } from "@/features/products/schema/product-form-schema";
 import {
-  PRODUCT_CATEGORIES,
-  PRODUCT_CURRENCIES,
-  PRODUCT_FEATURES,
-  PRODUCT_MANUFACTURERS,
-  PRODUCT_VAT_RATES,
-} from "@/features/products/data/product-options";
-import {
   applyPriceEdit,
   type PriceEdit,
 } from "@/features/products/utils/recalculate-prices";
+import { ProductAvailabilityStep } from "./product-availability-step";
+import { ProductInfoStep } from "./product-info-step";
+import { ProductPricingStep } from "./product-pricing-step";
 
 const STEPS: StepperStep[] = [
   { title: "Informacje", description: "Dane podstawowe" },
@@ -83,7 +76,7 @@ export function AddProductDialog({
     <Dialog open={open} onOpenChange={setOpen} disablePointerDismissal>
       <DialogTrigger
         render={
-          <Button className="h-9 shrink-0 gap-1.5 rounded-full bg-[#2563eb] px-4 text-neutral-50 hover:bg-[#2563eb]/80">
+          <Button className="h-9 shrink-0 cursor-pointer gap-1.5 rounded-full bg-[#2563eb] px-4 text-neutral-50 hover:bg-[#2563eb]/80">
             <PlusIcon />
             Dodaj produkt
           </Button>
@@ -98,7 +91,7 @@ export function AddProductDialog({
             <Button
               variant="ghost"
               size="icon-sm"
-              className="absolute top-4 right-4 text-neutral-500 sm:top-5 sm:right-5"
+              className="absolute top-4 right-4 cursor-pointer text-neutral-500 sm:top-5 sm:right-5"
             >
               <XIcon />
               <span className="sr-only">Zamknij</span>
@@ -130,6 +123,7 @@ function AddProductWizard({
   // ../tests/add-product-dialog.test.tsx is what catches it.
   const [step, setStep] = useState(1);
   const form = useWizardForm(step);
+  const panel = useRef<HTMLDivElement>(null);
 
   /**
    * The one way a price, or the VAT rate, is written.
@@ -145,6 +139,42 @@ function AddProductWizard({
     form.setFieldValue("priceNet", next.priceNet);
     form.setFieldValue("priceGross", next.priceGross);
     form.setFieldValue("vatRate", next.vatRate);
+  };
+
+  /**
+   * What "Dalej" does when the step is not finished.
+   *
+   * Until it is pressed the step is silent: a field keeps its message hidden
+   * until it has been finished with once (see `use-field-presentation.ts`),
+   * and an untouched one has never been finished with. Pressing the button
+   * counts as finishing with the whole step — every field of it is marked,
+   * revalidated, and the first one that turns out to be wrong takes focus. So
+   * the press answers the only question the visitor is asking, which is what
+   * is stopping them.
+   *
+   * The field list comes off the step's own schema so there is no second copy
+   * to drift, and the first invalid control is found by querying the panel
+   * rather than by name — document order is visual order, and the fields carry
+   * generated ids rather than names. `flushSync` is what makes that query see
+   * the marks this function has just made.
+   */
+  const revealStepErrors = () => {
+    const schema = stepSchema(step);
+    if (schema === undefined) return;
+    const names = Object.keys(schema.shape) as (keyof ProductFormValues)[];
+
+    flushSync(() => {
+      for (const name of names) {
+        form.setFieldMeta(name, (meta) => ({
+          ...meta,
+          isTouched: true,
+          isBlurred: true,
+        }));
+        form.validateField(name, "change");
+      }
+    });
+
+    panel.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
   };
 
   // The last step is the one with nothing after it to validate. Derived from
@@ -168,7 +198,7 @@ function AddProductWizard({
         className="border-b border-neutral-200 px-4 py-5"
       />
 
-      <div className="overflow-y-auto px-4 pt-5 pb-8">
+      <div ref={panel} className="overflow-y-auto px-4 pt-5 pb-8">
         {step === 1 && <ProductInfoStep form={form} />}
         {step === 2 && <ProductPricingStep form={form} onEdit={editPricing} />}
         {step === 3 && <ProductAvailabilityStep form={form} />}
@@ -179,290 +209,53 @@ function AddProductWizard({
           <Button
             variant="outline"
             onClick={() => setStep(step - 1)}
-            className="h-10 gap-2 rounded-full border-neutral-200 bg-white px-5 text-neutral-900 hover:bg-neutral-100"
+            className="h-10 cursor-pointer gap-2 rounded-full border-neutral-200 bg-white px-5 text-neutral-900 hover:bg-neutral-100"
           >
             <ArrowLeftIcon />
             Wstecz
           </Button>
         )}
 
-        {/* Gated on parsing the values, not on the form's own `isValid`:
-            TanStack derives that from errors, and a field has no errors until
-            a validator has run, so a blank form calls itself valid and this
-            button would be live before a word is typed. Parsing the same
-            schema the fields are validated against also means the button and
-            the messages can never disagree.
+        {/* An ordinary button, never disabled and never dimmed. It always has
+            something to do: move on, or say what is stopping it. A control
+            drawn as unavailable that answers a click is the worse of both —
+            `aria-disabled` promises assistive technology the press does
+            nothing, and `cursor-not-allowed` promises everyone else the same.
+            Whether the step is finished is a fact about the fields, and the
+            fields are where it is now shown.
 
-            `focusableWhenDisabled` makes Base UI mark it aria-disabled rather
-            than use the native attribute, which would drop it out of the tab
-            order and hide it from anyone reading the dialog through. */}
-        <form.Subscribe selector={(state) => isStepComplete(step, state.values)}>
-          {(complete) => (
-            <Button
-              disabled={!complete}
-              focusableWhenDisabled
-              onClick={() => {
-                if (!complete) return;
-                if (isLastStep) onSubmit(form.state.values);
-                else setStep(step + 1);
-              }}
-              className="ml-auto h-10 gap-2 rounded-full bg-blue-600 px-5 text-white hover:bg-blue-600/90 aria-disabled:cursor-not-allowed aria-disabled:bg-blue-600/60"
-            >
-              {/* The frame gives the save button no arrow — it does not lead
-                  anywhere. */}
-              {isLastStep ? (
-                "Zapisz produkt"
-              ) : (
-                <>
-                  Dalej
-                  <ArrowRightIcon />
-                </>
-              )}
-            </Button>
+            Completeness is therefore read on press rather than subscribed to:
+            nothing here renders differently for it, so the footer has no
+            reason to re-render on every keystroke.
+
+            `isStepComplete` rather than the form's own `isValid`: TanStack
+            derives that from errors, and a field has no errors until a
+            validator has run, so a blank form calls itself valid. Parsing the
+            same schema the fields are validated against also means this
+            button and the messages can never disagree. */}
+        <Button
+          onClick={() => {
+            if (!isStepComplete(step, form.state.values)) {
+              revealStepErrors();
+              return;
+            }
+            if (isLastStep) onSubmit(form.state.values);
+            else setStep(step + 1);
+          }}
+          className="ml-auto h-10 cursor-pointer gap-2 rounded-full bg-blue-600 px-5 text-white hover:bg-blue-600/90"
+        >
+          {/* The frame gives the save button no arrow — it does not lead
+              anywhere. */}
+          {isLastStep ? (
+            "Zapisz produkt"
+          ) : (
+            <>
+              Dalej
+              <ArrowRightIcon />
+            </>
           )}
-        </form.Subscribe>
+        </Button>
       </DialogFooter>
     </>
-  );
-}
-
-/**
- * One form for the whole wizard, not one per step. Stepping back and forth
- * then preserves what was typed without anything being copied anywhere, and
- * the values arrive at the eventual submit already in one object.
- *
- * Split out so `WizardForm` below has something to name: the type `useAppForm`
- * returns carries a dozen inferred validator parameters and is not worth
- * writing by hand.
- */
-function useWizardForm(step: number) {
-  return useAppForm({
-    defaultValues: PRODUCT_FORM_DEFAULTS,
-    // Everything validates under the `change` cause, including on blur — see
-    // `useFieldPresentation`, which also decides when a message is allowed to
-    // be seen. Only the step on screen is validated: a step-1 message has
-    // nowhere to appear while step 2 is showing. There is no `onSubmit` here
-    // either — there is no <form> element, and the save button is gated on the
-    // same parse every step's "Dalej" is, so it hands the values over itself.
-    validators: {
-      // The cast is about the declaration, not the behaviour. A step's schema
-      // describes only its own fields, so its inferred input type is missing
-      // the other step's — which is the whole of what TanStack type-checks
-      // here. At runtime Zod ignores the keys it was not given, which is
-      // exactly what a per-step validator is meant to do.
-      onChange: stepSchema(step) as StandardSchemaV1<ProductFormValues>,
-    },
-  });
-}
-
-type WizardForm = ReturnType<typeof useWizardForm>;
-
-/** Step 1 — "Informacje / Dane podstawowe". */
-function ProductInfoStep({ form }: { form: WizardForm }) {
-  return (
-    <FieldGroup>
-      <div className="grid gap-5 md:grid-cols-2">
-        <form.AppField name="name">
-          {(field) => (
-            <field.TextField
-              label="Nazwa produktu"
-              placeholder="np. MacBook Pro 14"
-              required
-            />
-          )}
-        </form.AppField>
-        <form.AppField name="sku">
-          {(field) => (
-            <field.TextField
-              label="SKU produktu"
-              placeholder="np. MBP14M3PRO"
-              autoComplete="off"
-              required
-            />
-          )}
-        </form.AppField>
-      </div>
-
-      {/* The frames label this one "Nazwa produktu" — a copy/paste of the
-          first field, in both the desktop and the mobile export. Corrected
-          deliberately: two controls with the same name are indistinguishable
-          to anyone navigating by label, and the placeholder the design gives
-          it ("Krótki opis produktu") says what it is actually for. */}
-      <form.AppField name="description">
-        {(field) => (
-          <field.TextareaField
-            label="Opis produktu"
-            placeholder="Krótki opis produktu"
-          />
-        )}
-      </form.AppField>
-
-      <div className="grid gap-5 md:grid-cols-2">
-        <form.AppField name="manufacturer">
-          {(field) => (
-            <field.SelectField
-              label="Producent"
-              placeholder="Wybierz producenta"
-              options={PRODUCT_MANUFACTURERS}
-              required
-            />
-          )}
-        </form.AppField>
-        <form.AppField name="category">
-          {(field) => (
-            <field.SelectField
-              label="Kategoria"
-              placeholder="Wybierz kategorię"
-              options={PRODUCT_CATEGORIES}
-              required
-            />
-          )}
-        </form.AppField>
-      </div>
-
-      <form.AppField name="features">
-        {(field) => (
-          <field.ChipGroupField
-            legend="Cechy produktu"
-            options={PRODUCT_FEATURES}
-          />
-        )}
-      </form.AppField>
-    </FieldGroup>
-  );
-}
-
-/**
- * Step 2 — "Cena / Dane cenowe". Four fields in the frame's 2x2 grid, stacked
- * on a phone.
- *
- * Both prices are real inputs: the frame gives no hint which is derived, and
- * a shop that knows its shelf price should not have to divide by 1.23 to enter
- * it. Whichever one is typed into, `onEdit` rewrites the other.
- */
-function ProductPricingStep({
-  form,
-  onEdit,
-}: {
-  form: WizardForm;
-  onEdit: (edit: PriceEdit) => void;
-}) {
-  return (
-    <FieldGroup>
-      <div className="grid gap-5 md:grid-cols-2">
-        <form.AppField name="priceNet">
-          {(field) => (
-            <field.NumberField
-              label="Cena netto"
-              placeholder="0.00"
-              required
-              onValueChange={(value) => onEdit({ field: "priceNet", value })}
-            />
-          )}
-        </form.AppField>
-        <form.AppField name="priceGross">
-          {(field) => (
-            <field.NumberField
-              label="Cena brutto"
-              placeholder="0.00"
-              required
-              onValueChange={(value) => onEdit({ field: "priceGross", value })}
-            />
-          )}
-        </form.AppField>
-      </div>
-
-      <div className="grid gap-5 md:grid-cols-2">
-        {/* The frame draws this one without a chevron, unlike "Waluta" beside
-            it — two controls that behave identically, drawn as if only one of
-            them opens. Corrected the same way the duplicated label on step 1
-            was: it is a normal select, and it looks like one. */}
-        <form.AppField name="vatRate">
-          {(field) => (
-            <field.SelectField
-              label="Stawka VAT"
-              options={PRODUCT_VAT_RATES}
-              required
-              onValueChange={(value) => onEdit({ field: "vatRate", value })}
-            />
-          )}
-        </form.AppField>
-        <form.AppField name="currency">
-          {(field) => (
-            <field.SelectField
-              label="Waluta"
-              options={PRODUCT_CURRENCIES}
-              required
-            />
-          )}
-        </form.AppField>
-      </div>
-    </FieldGroup>
-  );
-}
-
-/**
- * Step 3 — "Dostępność / Stany magazynowe".
- *
- * The frame is a stack of rows separated by hairlines: the switch, the
- * checkbox, then "Limity koszyka" over a two-column row that stacks on a
- * phone. `gap-4` rather than `FieldGroup`'s default 5 because the separators
- * carry the spacing between sections here.
- *
- * "Ilość na magazynie" is not in the frame. The checkbox beside it is labelled
- * "Produkt limitowany" and gates nothing otherwise, and the listing has a
- * "Magazyn" column with no way to fill it — so the box it reveals is what that
- * checkbox is for.
- */
-function ProductAvailabilityStep({ form }: { form: WizardForm }) {
-  return (
-    <FieldGroup className="gap-4">
-      <form.AppField name="available">
-        {(field) => <field.SwitchField label="Produkt jest dostępny" />}
-      </form.AppField>
-
-      <Separator className="bg-neutral-200" />
-
-      <form.AppField name="limited">
-        {(field) => <field.CheckboxField label="Produkt limitowany" />}
-      </form.AppField>
-
-      {/* Subscribed rather than read off `form.state`: the panel has to
-          re-render when the box is ticked, and nothing else here does. The
-          field is unmounted while it is off, which is deliberate — the value
-          stays in the form and is restored on re-tick, and the step's schema
-          ignores it meanwhile, so a number nobody can see can never be why
-          "Zapisz produkt" is dead. */}
-      <form.Subscribe selector={(state) => state.values.limited}>
-        {(limited) =>
-          limited && (
-            <div className="grid gap-5 md:grid-cols-2">
-              <form.AppField name="stockQuantity">
-                {(field) => (
-                  <field.NumberField
-                    label="Ilość na magazynie"
-                    placeholder="0"
-                    required
-                  />
-                )}
-              </form.AppField>
-            </div>
-          )
-        }
-      </form.Subscribe>
-
-      <Separator className="bg-neutral-200" />
-
-      <h3 className="text-base font-medium text-neutral-950">Limity koszyka</h3>
-
-      <div className="grid gap-5 md:grid-cols-2">
-        <form.AppField name="minQuantity">
-          {(field) => <field.NumberField label="Minimalna ilość" required />}
-        </form.AppField>
-        <form.AppField name="maxQuantity">
-          {(field) => <field.NumberField label="Maksymalna ilość" required />}
-        </form.AppField>
-      </div>
-    </FieldGroup>
   );
 }
