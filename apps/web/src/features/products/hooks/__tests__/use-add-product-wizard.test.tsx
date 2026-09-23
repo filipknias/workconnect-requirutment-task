@@ -64,9 +64,10 @@ describe("useAddProductWizard", () => {
 
     expect(onSubmit).toHaveBeenCalledOnce();
     expect(onSubmit.mock.calls[0]![0]).toMatchObject({
+      id: "mbp14m3pro",
       sku: "MBP14M3PRO",
       priceNet: 100,
-      priceGross: 123,
+      price: 123,
       minQuantity: 1,
       maxQuantity: 10,
     });

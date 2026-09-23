@@ -30,7 +30,7 @@ export const productInfoSchema = z.object({
   features: z.array(z.string()),
 });
 
-export type ProductInfoValues = z.infer<typeof productInfoSchema>;
+export type ProductInfoValues = z.input<typeof productInfoSchema>;
 
 // `""`, not `undefined`: an `undefined` value makes the inputs uncontrolled.
 export const PRODUCT_INFO_DEFAULTS: ProductInfoValues = {
@@ -43,18 +43,14 @@ export const PRODUCT_INFO_DEFAULTS: ProductInfoValues = {
 };
 
 function priceSchema(label: string) {
-  return (
-    z
-      .number()
-      .nullable()
-      // `: boolean` is load-bearing: without it Zod narrows the output to `number`,
-      // but the stored value is nullable (see PRODUCT_PRICING_DEFAULTS).
-      .refine((value): boolean => value !== null, `${label} jest wymagana`)
-      .refine(
-        (value): boolean => value === null || value > 0,
-        `${label} musi być większa od zera`,
-      )
-  );
+  return z
+    .number()
+    .nullable()
+    .refine((value): value is number => value !== null, {
+      message: `${label} jest wymagana`,
+      abort: true,
+    })
+    .refine((value) => value > 0, `${label} musi być większa od zera`);
 }
 
 export const productPricingSchema = z.object({
@@ -64,7 +60,7 @@ export const productPricingSchema = z.object({
   currency: z.string().min(1, "Waluta jest wymagana"),
 });
 
-export type ProductPricingValues = z.infer<typeof productPricingSchema>;
+export type ProductPricingValues = z.input<typeof productPricingSchema>;
 
 export const PRODUCT_PRICING_DEFAULTS: ProductPricingValues = {
   priceNet: null,
@@ -92,7 +88,7 @@ export const productAvailabilitySchema = z
     }
   });
 
-export type ProductAvailabilityValues = z.infer<typeof productAvailabilitySchema>;
+export type ProductAvailabilityValues = z.input<typeof productAvailabilitySchema>;
 
 export const PRODUCT_AVAILABILITY_DEFAULTS: ProductAvailabilityValues = {
   available: true,

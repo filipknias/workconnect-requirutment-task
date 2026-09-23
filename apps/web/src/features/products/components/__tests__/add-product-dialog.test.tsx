@@ -627,8 +627,7 @@ describe("AddProductDialog", () => {
     await user.click(limited);
     await user.click(save());
     expect(onSubmit).toHaveBeenCalledOnce();
-    expect(onSubmit.mock.calls[0]?.[0].limited).toBe(false);
-    expect(onSubmit.mock.calls[0]?.[0].stockQuantity).toBeNull();
+    expect(onSubmit.mock.calls[0]?.[0].stock).toBeNull();
   });
 
   it("says a maximum below the minimum on both boxes", async () => {
@@ -684,7 +683,7 @@ describe("AddProductDialog", () => {
     ).toBeInTheDocument();
   });
 
-  it("saves the whole wizard, closes, and hands the values over", async () => {
+  it("saves the whole wizard, closes, and hands the product over", async () => {
     const user = open();
     const onSubmit = renderDialog();
     await openDialog(user);
@@ -696,18 +695,18 @@ describe("AddProductDialog", () => {
 
     expect(onSubmit).toHaveBeenCalledOnce();
     expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({
+      id: "mbp14m3pro",
       name: "MacBook Pro 14",
       sku: "MBP14M3PRO",
       manufacturer: "apple",
       category: "komputery",
       features: ["bluetooth"],
       priceNet: 100,
-      priceGross: 123,
+      price: 123,
       vatRate: 23,
       currency: "PLN",
-      available: true,
-      limited: true,
-      stockQuantity: 12,
+      status: "available",
+      stock: 12,
       minQuantity: 1,
       maxQuantity: 10,
     });
@@ -723,7 +722,7 @@ describe("AddProductDialog", () => {
     await user.click(screen.getByRole("switch", { name: "Produkt jest dostępny" }));
     await user.click(screen.getByRole("button", { name: "Zapisz produkt" }));
 
-    expect(onSubmit.mock.calls[0]?.[0].available).toBe(false);
+    expect(onSubmit.mock.calls[0]?.[0].status).toBe("unavailable");
   });
 
   it("does not submit from an incomplete step three", async () => {

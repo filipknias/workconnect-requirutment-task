@@ -14,7 +14,7 @@ import {
 import { Stepper } from "@repo/ui/components/stepper";
 import { ArrowLeftIcon, ArrowRightIcon, PlusIcon, XIcon } from "lucide-react";
 import { useAddProductWizard } from "@/features/products/hooks/use-add-product-wizard";
-import type { ProductFormValues } from "@/features/products/schema/product-form-schema";
+import type { Product } from "@/features/products/types/product";
 
 // `light-surface` is load-bearing: without it, dark-mode tokens make the input
 // borders vanish against the white card.
@@ -26,7 +26,7 @@ const CONTENT_CLASS =
 export function AddProductDialog({
   onSubmit,
 }: {
-  onSubmit: (values: ProductFormValues) => void;
+  onSubmit: (product: Product) => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -55,8 +55,8 @@ export function AddProductDialog({
           }
         />
         <AddProductWizard
-          onSubmit={(values) => {
-            onSubmit(values);
+          onSubmit={(product) => {
+            onSubmit(product);
             setOpen(false);
           }}
         />
@@ -68,7 +68,7 @@ export function AddProductDialog({
 function AddProductWizard({
   onSubmit,
 }: {
-  onSubmit: (values: ProductFormValues) => void;
+  onSubmit: (product: Product) => void;
 }) {
   // State lives inside DialogContent so closing unmounts it and resets the form;
   // passing `keepMounted` to the portal would silently break that.

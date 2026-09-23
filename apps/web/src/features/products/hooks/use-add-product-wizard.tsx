@@ -14,6 +14,8 @@ import {
   productPricingSchema,
   type ProductFormValues,
 } from "@/features/products/schema/product-form-schema";
+import type { Product } from "@/features/products/types/product";
+import { parseProduct } from "@/features/products/utils/parse-product";
 
 const STEPS = [
   {
@@ -57,7 +59,7 @@ export type WizardForm = ReturnType<typeof useStepForm>;
 export function useAddProductWizard({
   onSubmit,
 }: {
-  onSubmit: (values: ProductFormValues) => void;
+  onSubmit: (product: Product) => void;
 }) {
   const [step, setStep] = useState(1);
   const { schema, Panel } = STEPS[step - 1]!;
@@ -90,7 +92,7 @@ export function useAddProductWizard({
       revealErrors();
       return;
     }
-    if (isLast) onSubmit(form.state.values);
+    if (isLast) onSubmit(parseProduct(form.state.values));
     else setStep(step + 1);
   };
 

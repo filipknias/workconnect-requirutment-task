@@ -3,7 +3,7 @@ import {
   PRODUCT_FORM_DEFAULTS,
   type ProductFormValues,
 } from "@/features/products/schema/product-form-schema";
-import { toProduct } from "@/features/products/utils/to-product";
+import { parseProduct } from "@/features/products/utils/parse-product";
 
 const SUBMITTED: ProductFormValues = {
   ...PRODUCT_FORM_DEFAULTS,
@@ -19,9 +19,9 @@ const SUBMITTED: ProductFormValues = {
   currency: "PLN",
 };
 
-describe("toProduct", () => {
+describe("parseProduct", () => {
   it("carries every answer over under the catalogue's names", () => {
-    expect(toProduct(SUBMITTED, "px9pro256")).toEqual({
+    expect(parseProduct(SUBMITTED)).toEqual({
       id: "px9pro256",
       name: "Pixel 9 Pro",
       sku: "PX9PRO256",
@@ -41,42 +41,52 @@ describe("toProduct", () => {
   });
 
   it("keeps the slugs rather than the labels beside them", () => {
-    const product = toProduct(SUBMITTED, "px9pro256");
+    const product = parseProduct(SUBMITTED);
 
     expect(product.category).toBe("telefony");
     expect(product.manufacturer).toBe("samsung");
   });
 
-  it("takes the id it is given rather than inventing one", () => {
-    expect(toProduct(SUBMITTED, "whatever").id).toBe("whatever");
+  it("derives the id from the SKU, lowercased and trimmed", () => {
+    expect(parseProduct({ ...SUBMITTED, sku: " PX9PRO256 " }).id).toBe("px9pro256");
   });
 
   it("trims the text fields, the way the schema measured them", () => {
-    const product = toProduct(
-      { ...SUBMITTED, name: "  Pixel 9 Pro  ", sku: " PX9PRO256 ", description: " Opis " },
-      "px9pro256",
-    );
+    const product = parseProduct({
+      ...SUBMITTED,
+      name: "  Pixel 9 Pro  ",
+      sku: " PX9PRO256 ",
+      description: " Opis ",
+    });
 
     expect(product.name).toBe("Pixel 9 Pro");
     expect(product.sku).toBe("PX9PRO256");
     expect(product.description).toBe("Opis");
   });
 
+  it("throws on values the steps would not have let through", () => {
+    expect(() => parseProduct(PRODUCT_FORM_DEFAULTS)).toThrow();
+    expect(() => parseProduct({ ...SUBMITTED, priceGross: null })).toThrow();
+    expect(() =>
+      parseProduct({ ...SUBMITTED, limited: true, stockQuantity: null }),
+    ).toThrow();
+  });
+
   describe("status", () => {
     it("comes from the switch alone", () => {
-      expect(toProduct({ ...SUBMITTED, available: true }, "x").status).toBe(
-        "available",
-      );
-      expect(toProduct({ ...SUBMITTED, available: false }, "x").status).toBe(
+      expect(parseProduct({ ...SUBMITTED, available: true }).status).toBe("available");
+      expect(parseProduct({ ...SUBMITTED, available: false }).status).toBe(
         "unavailable",
       );
     });
 
     it("is not second-guessed by an empty shelf", () => {
-      const product = toProduct(
-        { ...SUBMITTED, available: true, limited: true, stockQuantity: 0 },
-        "x",
-      );
+      const product = parseProduct({
+        ...SUBMITTED,
+        available: true,
+        limited: true,
+        stockQuantity: 0,
+      });
 
       expect(product.status).toBe("available");
       expect(product.stock).toBe(0);
@@ -85,27 +95,24 @@ describe("toProduct", () => {
 
   describe("stock", () => {
     it("is null for a product that is not limited", () => {
-      expect(toProduct({ ...SUBMITTED, limited: false }, "x").stock).toBeNull();
+      expect(parseProduct({ ...SUBMITTED, limited: false }).stock).toBeNull();
     });
 
     it("ignores a quantity left behind by an untick", () => {
       expect(
-        toProduct({ ...SUBMITTED, limited: false, stockQuantity: 12 }, "x").stock,
+        parseProduct({ ...SUBMITTED, limited: false, stockQuantity: 12 }).stock,
       ).toBeNull();
     });
 
     it("is the quantity once it is", () => {
-      expect(
-        toProduct({ ...SUBMITTED, limited: true, stockQuantity: 12 }, "x").stock,
-      ).toBe(12);
+      expect(parseProduct({ ...SUBMITTED, limited: true, stockQuantity: 12 }).stock).toBe(
+        12,
+      );
     });
   });
 
   it("carries the cart limits across", () => {
-    const product = toProduct(
-      { ...SUBMITTED, minQuantity: 2, maxQuantity: 4 },
-      "x",
-    );
+    const product = parseProduct({ ...SUBMITTED, minQuantity: 2, maxQuantity: 4 });
 
     expect(product.minQuantity).toBe(2);
     expect(product.maxQuantity).toBe(4);

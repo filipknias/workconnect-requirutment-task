@@ -4,11 +4,9 @@ import { useState } from "react";
 import { toast } from "@repo/ui/components/toast";
 import { useQueryStates } from "nuqs";
 import type { Product } from "../types/product";
-import type { ProductFormValues } from "../schema/product-form-schema";
 import { getProductsPage } from "../utils/get-products-page";
 import { formatProductCount } from "../utils/product-labels";
 import { productSearchParams } from "../utils/search-params";
-import { toProduct } from "../utils/to-product";
 import { AddProductDialog } from "./add-product-dialog";
 import { ProductCardList } from "./product-card-list";
 import { ProductTable } from "./product-table";
@@ -24,11 +22,8 @@ export function ProductsCatalogue({
   const [{ page }, setSearchParams] = useQueryStates(productSearchParams);
   const productsPage = getProductsPage(page, products);
 
-  const addProduct = (values: ProductFormValues) => {
-    setProducts((current) => [
-      toProduct(values, values.sku.trim().toLowerCase()),
-      ...current,
-    ]);
+  const addProduct = (product: Product) => {
+    setProducts((current) => [product, ...current]);
     void setSearchParams({ page: 1 });
     toast.add({ title: "Produkt został dodany", type: "success" });
   };
