@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { Stepper } from "../src/components/stepper";
+import { Stepper } from "../stepper";
 
 const STEPS = [
   { title: "Informacje", description: "Dane podstawowe" },

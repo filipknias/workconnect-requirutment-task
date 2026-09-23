@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { Badge } from "../src/components/badge";
+import { Badge } from "../badge";
 
 describe("Badge", () => {
   it("renders a span by default", () => {

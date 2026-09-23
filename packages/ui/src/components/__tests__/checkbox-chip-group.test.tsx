@@ -2,7 +2,7 @@ import { useState } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { CheckboxChipGroup } from "../src/components/checkbox-chip-group";
+import { CheckboxChipGroup } from "../checkbox-chip-group";
 
 const OPTIONS = [
   { value: "bluetooth", label: "Bluetooth" },

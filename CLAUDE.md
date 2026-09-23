@@ -29,8 +29,8 @@ feature-first), `packages/ui` (`@repo/ui`), and three config packages:
 `@repo/eslint-config`, `@repo/typescript-config`, `@repo/vitest-config`.
 
 Inside `apps/web/src`, the top level is grouped by feature and each feature is
-grouped by kind: `types/`, `data/`, `schema/`, `utils/`, `components/`,
-`tests/` — only the folders a feature actually needs. `src/components/<module>/`
+grouped by kind: `types/`, `data/`, `schema/`, `utils/`, `components/` — only
+the folders a feature actually needs. `src/components/<module>/`
 does the same but keeps its components at the root, grouping only `hooks/` and
 `context/`. No barrel files anywhere.
 
@@ -72,11 +72,13 @@ Run gates from the root: `pnpm lint`, `pnpm typecheck`, `pnpm test`,
 TanStack Form are installed but unwired on purpose — there is no `useAppForm`
 binding and no multistep shell yet. Build them with the first real form.
 
-Tests live in a `tests/` directory, never beside the file they test.
-`apps/web` feature tests go in `src/features/<feature>/tests/` (flat);
-`apps/web/tests/` is for route-level tests only; `packages/ui/tests/` holds that
-package's. `apps/web/vitest.config.mts` merges `src/**/*.test.{ts,tsx}` onto the
-shared config's `tests/**` glob to collect both.
+A test goes in a `__tests__/` folder inside the folder of the file it tests,
+named `<source>.test.ts(x)` — e.g. `utils/format-price.ts` is tested by
+`utils/__tests__/format-price.test.ts`. This covers `packages/ui` and routes
+(`src/app/__tests__/`) too; there is no workspace-level `tests/` directory. Vitest
+collects `src/**/*.test.{ts,tsx}`, so a misplaced test still runs — nothing
+enforces the folder, so put it in the right place. Both `globals.css` files
+exclude `__tests__` from Tailwind source detection via `@source not`.
 
 See `README.md` for the full conventions, including the nuqs shared-parser
 convention.

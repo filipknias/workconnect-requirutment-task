@@ -8,7 +8,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../src/components/select";
+} from "../select";
 
 const OPTIONS = [
   { value: "apple", label: "Apple" },

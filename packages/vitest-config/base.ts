@@ -8,6 +8,6 @@ import { defineConfig } from "vitest/config";
 export const baseConfig = defineConfig({
   test: {
     globals: true,
-    include: ["tests/**/*.test.{ts,tsx}"],
+    include: ["src/**/*.test.{ts,tsx}"],
   },
 });

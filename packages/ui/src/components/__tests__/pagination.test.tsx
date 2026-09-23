@@ -10,7 +10,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "../src/components/pagination";
+} from "../pagination";
 
 describe("Pagination", () => {
   it("is a navigation landmark holding a list", () => {

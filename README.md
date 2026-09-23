@@ -97,8 +97,10 @@ src/features/products/
   schema/      Zod schemas, and the types inferred from them
   utils/       pure helpers: formatters, labels, search-param parsers
   components/  the feature's React components
-  tests/       flat; one file per module under test
 ```
+
+Any kind folder with tests gets a `__tests__/` subfolder beside its sources —
+`utils/__tests__/format-price.test.ts` tests `utils/format-price.ts`.
 
 `src/components/` follows the same rule one level down — a shared module folder
 keeps its components at the root and groups only what is not a component:
@@ -106,7 +108,9 @@ keeps its components at the root and groups only what is not a component:
 ```
 src/components/form/
   text-field.tsx  textarea-field.tsx  select-field.tsx  chip-group-field.tsx
+  __tests__/   tests for the components at the root
   hooks/       use-app-form.ts, use-field-presentation.ts
+    __tests__/ tests for the hooks
   context/     field-context.ts
 ```
 
@@ -158,24 +162,28 @@ at a call site — the default would drift between the two.
 
 ### Tests
 
-Vitest, jsdom, Testing Library. Tests live in a `tests/` directory — never
-beside the file they test — and that directory sits as close to the code as the
-code's own grouping allows:
+Vitest, jsdom, Testing Library. Every folder that holds tested sources gets a
+`__tests__/` subfolder, with one `<source>.test.ts(x)` per source file:
 
 ```
-apps/web/src/features/<feature>/tests/   the feature's tests, flat
-apps/web/tests/                          route-level tests only
-packages/ui/tests/                       the package's tests
+apps/web/src/features/products/utils/__tests__/format-price.test.ts
+apps/web/src/components/form/hooks/__tests__/use-field-presentation.test.tsx
+apps/web/src/app/__tests__/page.test.tsx       route tests too — Next never routes `_` folders
+packages/ui/src/components/__tests__/dialog.test.tsx
 ```
 
-`packages/ui` re-exports the shared `@repo/vitest-config/react` as-is, which
-collects `tests/**`. `apps/web/vitest.config.mts` merges `src/**/*.test.{ts,tsx}`
-on top so the co-located feature tests are picked up too — `mergeConfig`
-concatenates `include`, so both globs stay live. `globals: true` is on, which is
-what gives Testing Library its automatic `cleanup` between tests.
+The shared `@repo/vitest-config` collects `src/**/*.test.{ts,tsx}` and both
+workspaces re-export `@repo/vitest-config/react` as-is. The glob is deliberately
+broader than `__tests__/`, so a misplaced test still runs instead of being
+silently skipped; the folder rule is a convention, not enforced. `globals: true`
+is on, which is what gives Testing Library its automatic `cleanup` between
+tests.
 
-Inside `packages/ui`, tests import components by relative path
-(`../src/components/dialog`) rather than through `@repo/ui/...`.
+Both `globals.css` files carry `@source not "../**/__tests__"`, so class names
+that appear only in tests never reach the output CSS.
+
+Inside `packages/ui`, tests import components by relative path (`../dialog`)
+rather than through `@repo/ui/...`.
 
 There is no coverage tooling.
 

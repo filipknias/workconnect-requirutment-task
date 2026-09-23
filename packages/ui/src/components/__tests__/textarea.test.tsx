@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { Textarea } from "../src/components/textarea";
+import { Textarea } from "../textarea";
 
 describe("Textarea", () => {
   it("is a plain textarea the caller's props reach", () => {

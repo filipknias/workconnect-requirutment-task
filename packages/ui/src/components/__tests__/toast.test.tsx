@@ -2,7 +2,7 @@ import { act } from "react";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { Toaster, createToastManager } from "../src/components/toast";
+import { Toaster, createToastManager } from "../toast";
 
 /**
  * A toast has no close button, so the whole toast is the dismiss target. A

@@ -19,6 +19,9 @@
  */
 @source "../**/*.{ts,tsx}";
 
+/* Tests sit in `__tests__/` beside their sources; keep them out of class detection. */
+@source not "../**/__tests__";
+
 @theme inline {
     --font-heading: var(--font-sans);
     --color-sidebar-ring: var(--sidebar-ring);

@@ -8,7 +8,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "../src/components/card";
+} from "../card";
 
 function renderCard(props?: { size?: "default" | "sm" }) {
   return render(

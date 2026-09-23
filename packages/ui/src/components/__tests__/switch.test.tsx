@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { Switch } from "../src/components/switch";
+import { Switch } from "../switch";
 
 function Controlled({ onCheckedChange = vi.fn() }) {
   const [checked, setChecked] = useState(true);
