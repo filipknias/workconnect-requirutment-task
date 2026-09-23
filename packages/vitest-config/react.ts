@@ -3,7 +3,6 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, mergeConfig } from "vitest/config";
 import { baseConfig } from "@repo/vitest-config/base";
 
-/** The base config plus a browser-like DOM and jest-dom matchers. */
 export const reactConfig = mergeConfig(
   baseConfig,
   defineConfig({

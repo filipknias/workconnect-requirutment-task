@@ -48,8 +48,6 @@ describe("visiblePages", () => {
   });
 
   it("puts a page outside the catalogue at the end it is nearest", () => {
-    // `getProductsPage` reports `?page=99` verbatim rather than clamping, so
-    // the controls have to make sense of it.
     expect(visiblePages(99, 2)).toEqual([1, 2]);
     expect(visiblePages(99, 21)).toEqual([1, "ellipsis", 17, 18, 19, 20, 21]);
     expect(visiblePages(0, 21)).toEqual([1, 2, 3, 4, 5, "ellipsis", 21]);

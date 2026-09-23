@@ -5,13 +5,9 @@ import { ProductTable } from "@/features/products/components/product-table";
 import { PRODUCTS } from "@/features/products/data/products";
 import { getProductsPage } from "@/features/products/utils/get-products-page";
 
-/** Keeps the non-breaking spaces intact — collapsing them would defeat the point. */
+// Testing Library collapses whitespace by default, which would eat the NBSPs.
 const verbatim = { normalizer: (value: string) => value };
 
-/**
- * The paging controls inside both layouts read the page out of the URL with
- * nuqs, so they need an adapter even though these tests are handed the page.
- */
 const wrapper = withNuqsTestingAdapter();
 
 describe("ProductTable", () => {
@@ -30,7 +26,6 @@ describe("ProductTable", () => {
 
     const row = screen.getByRole("row", { name: /MacBook Pro 14"/ });
     expect(within(row).getByText("MBP14M3PRO")).toBeInTheDocument();
-    // The row stores the slug "komputery"; the cell shows the Polish label.
     expect(within(row).getByText("Komputery")).toBeInTheDocument();
     expect(within(row).getByText("9999,00 PLN", verbatim)).toBeInTheDocument();
     expect(within(row).getByText("Dostępny")).toBeInTheDocument();
@@ -65,7 +60,6 @@ describe("ProductTable", () => {
       "href",
       "/",
     );
-    // The caption reports the page that was asked for.
     expect(
       screen.getByText("Strona 99 z 2 · 7 produktów", verbatim),
     ).toBeInTheDocument();

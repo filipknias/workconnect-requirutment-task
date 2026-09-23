@@ -32,7 +32,6 @@ describe("getProductsPage", () => {
 
     expect(products).toEqual([]);
     expect(page).toBe(99);
-    // The catalogue counts stay honest so the caption can still be rendered.
     expect(totalPages).toBe(2);
     expect(total).toBe(7);
   });

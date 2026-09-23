@@ -13,17 +13,8 @@ import { AddProductDialog } from "./add-product-dialog";
 import { ProductCardList } from "./product-card-list";
 import { ProductTable } from "./product-table";
 
-/**
- * The catalogue, and the one place that owns it.
- *
- * There is no API, so "adding a product" is a `useState` seeded from the mock
- * rows the route hands in. That is also why the page number lives in nuqs
- * rather than in the URL a server component reads: nuqs' setter is shallow by
- * default, so paging rewrites the address bar without a round-trip, and a
- * product added a moment ago is still there on page two.
- *
- * Both layouts render and CSS picks one at `lg`.
- */
+// Added products live only in this `useState`; the page is in shallow nuqs so
+// paging never refetches and drops them.
 export function ProductsCatalogue({
   initialProducts,
 }: {
@@ -33,15 +24,6 @@ export function ProductsCatalogue({
   const [{ page }, setSearchParams] = useQueryStates(productSearchParams);
   const productsPage = getProductsPage(page, products);
 
-  /**
-   * What "Zapisz produkt" does. The dialog has already validated every step,
-   * so there is nothing to check here — only to place.
-   *
-   * The new row goes on *top*, and the listing jumps back to page one. The
-   * Figma frame appends instead, which puts an eighth product on a page two
-   * nobody is looking at: the visitor would be told it worked and see nothing
-   * change. The id is the lowercased SKU, matching the seeded rows.
-   */
   const addProduct = (values: ProductFormValues) => {
     setProducts((current) => [
       toProduct(values, values.sku.trim().toLowerCase()),

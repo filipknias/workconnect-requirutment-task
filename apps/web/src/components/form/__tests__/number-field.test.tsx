@@ -3,11 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { useAppForm } from "@/components/form/hooks/use-app-form";
 
-/**
- * `echo` is what step 2 does with `onValueChange`: take the edit, and write it
- * back itself. Without it the box would never fill, because the field only
- * holds what the handler puts there.
- */
 function Harness({
   onValueChange,
   echo = false,
@@ -85,8 +80,6 @@ describe("NumberField", () => {
     await user.type(input(), "5");
 
     expect(onValueChange).toHaveBeenCalledWith(5);
-    // Step 2's prices rewrite each other, so the whole edit goes through one
-    // place — the field does not also write itself.
     expect(stored()).toBe("null");
   });
 
@@ -117,8 +110,6 @@ describe("NumberField", () => {
   it("leaves precision to the schema rather than to the browser", () => {
     render(<Harness />);
 
-    // `step="0.01"` would have the browser call 19.999 invalid while the
-    // schema calls it fine — two authorities on one box.
     expect(input()).toHaveAttribute("step", "any");
     expect(input()).toHaveAttribute("inputmode", "decimal");
   });

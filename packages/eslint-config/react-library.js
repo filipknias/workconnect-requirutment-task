@@ -4,7 +4,6 @@ import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
-/** Lint rules for a buildless React component package. */
 export default defineConfig([
   globalIgnores(["node_modules/**", "dist/**"]),
   js.configs.recommended,

@@ -8,13 +8,6 @@ import {
   useFieldPresentation,
 } from "./hooks/use-field-presentation";
 
-/**
- * A single-line text field bound to the enclosing `form.AppField`. The call
- * site supplies the copy; the label/control/error wiring is not its problem.
- *
- * There is no `maxLength`: a field that silently swallows keystrokes at the
- * limit is worse than one that says what the limit is.
- */
 export function TextField({
   label,
   placeholder,

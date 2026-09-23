@@ -8,7 +8,6 @@ import {
 } from "@/features/products/data/product-options";
 import type { WizardForm } from "@/features/products/hooks/use-wizard-form";
 
-/** Step 1 — "Informacje / Dane podstawowe". */
 export function ProductInfoStep({ form }: { form: WizardForm }) {
   return (
     <FieldGroup>
@@ -34,11 +33,6 @@ export function ProductInfoStep({ form }: { form: WizardForm }) {
         </form.AppField>
       </div>
 
-      {/* The frames label this one "Nazwa produktu" — a copy/paste of the
-          first field, in both the desktop and the mobile export. Corrected
-          deliberately: two controls with the same name are indistinguishable
-          to anyone navigating by label, and the placeholder the design gives
-          it ("Krótki opis produktu") says what it is actually for. */}
       <form.AppField name="description">
         {(field) => (
           <field.TextareaField

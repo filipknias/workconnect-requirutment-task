@@ -23,7 +23,6 @@ describe("Badge", () => {
   it("keeps the caller's classes alongside its own", () => {
     render(<Badge className="bg-[#16a34a]/10">Dostępny</Badge>);
 
-    // The products feature paints its own status colours over the variant.
     const badge = screen.getByText("Dostępny");
     expect(badge.className).toContain("bg-[#16a34a]/10");
     expect(badge.className).toContain("inline-flex");
@@ -36,7 +35,6 @@ describe("Badge", () => {
       </Badge>,
     );
 
-    // `render`, not `asChild` — this is base-nova, not Radix.
     const link = screen.getByRole("link", { name: "Zobacz" });
     expect(link).toHaveAttribute("href", "/produkty");
     expect(link).toHaveAttribute("data-slot", "badge");

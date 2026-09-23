@@ -7,10 +7,6 @@ function open() {
   return userEvent.setup();
 }
 
-/**
- * Most of these tests never get as far as submitting, so the handler is a spy
- * they can ignore. The ones that do read it back.
- */
 function renderDialog(onSubmit = vi.fn()) {
   render(<AddProductDialog onSubmit={onSubmit} />);
   return onSubmit;
@@ -21,11 +17,6 @@ async function openDialog(user: ReturnType<typeof open>) {
   return screen.getByRole("dialog");
 }
 
-/**
- * A filled-in step one. The chip is not part of what "Dalej" waits for — the
- * features are optional — but it is ticked here so the step-2 tests carry a
- * value across the step boundary and back.
- */
 async function fillStepOne(user: ReturnType<typeof open>) {
   await user.type(screen.getByLabelText("Nazwa produktu"), "MacBook Pro 14");
   await user.type(screen.getByLabelText("SKU produktu"), "MBP14M3PRO");
@@ -41,14 +32,12 @@ async function goToStepTwo(user: ReturnType<typeof open>) {
   await user.click(screen.getByRole("button", { name: "Dalej" }));
 }
 
-/** Step two filled in, standing on step three. */
 async function goToStepThree(user: ReturnType<typeof open>) {
   await goToStepTwo(user);
   await user.type(screen.getByLabelText("Cena netto"), "100");
   await user.click(screen.getByRole("button", { name: "Dalej" }));
 }
 
-/** The step the stepper is showing as in progress. */
 function currentStep() {
   return screen
     .getAllByRole("listitem")
@@ -85,7 +74,6 @@ describe("AddProductDialog", () => {
       "placeholder",
       "np. MBP14M3PRO",
     );
-    // Deliberately not the frame's duplicated "Nazwa produktu".
     expect(screen.getByLabelText("Opis produktu")).toHaveAttribute(
       "placeholder",
       "Krótki opis produktu",
@@ -268,9 +256,6 @@ describe("AddProductDialog", () => {
     renderDialog();
     await openDialog(user);
 
-    // It is rendered before the fields, so it is where entry focus lands and
-    // the first thing a keyboard user meets — unlike the shared DialogContent's
-    // own close button, which sits after the children and is the last stop.
     expect(screen.getByRole("button", { name: "Zamknij" })).toHaveFocus();
 
     await user.tab();
@@ -324,9 +309,6 @@ describe("AddProductDialog", () => {
     renderDialog();
     await openDialog(user);
 
-    // An ordinary button: reachable, pressable, and drawn no differently
-    // from the one that advances. Whether the step is finished is a fact
-    // about the fields, not about the button.
     const dalej = screen.getByRole("button", { name: "Dalej" });
     expect(dalej).not.toBeDisabled();
     expect(dalej).not.toHaveAttribute("aria-disabled");
@@ -344,7 +326,6 @@ describe("AddProductDialog", () => {
     renderDialog();
     await openDialog(user);
 
-    // Nothing has been touched, so the whole step is still quiet.
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Dalej" }));
@@ -353,7 +334,6 @@ describe("AddProductDialog", () => {
     expect(screen.getByText("SKU jest wymagane")).toBeInTheDocument();
     expect(screen.getByText("Producent jest wymagany")).toBeInTheDocument();
     expect(screen.getByText("Kategoria jest wymagana")).toBeInTheDocument();
-    // The optional ones stay quiet — they are not why the button is dead.
     expect(screen.getByLabelText("Opis produktu")).not.toHaveAttribute(
       "aria-invalid",
     );
@@ -367,7 +347,6 @@ describe("AddProductDialog", () => {
     await user.type(screen.getByLabelText("Nazwa produktu"), "MacBook Pro 14");
     await user.click(screen.getByRole("button", { name: "Dalej" }));
 
-    // Name is filled in, so the first problem is the one below it.
     expect(screen.getByLabelText("SKU produktu")).toHaveFocus();
   });
 
@@ -444,9 +423,6 @@ describe("AddProductDialog", () => {
 
     await fillStepOne(user);
 
-    // Nothing about the button moves — no dimming, no not-allowed cursor,
-    // nothing that would read as unavailable on a control that is not. It is
-    // a hand throughout, because it is pressable throughout.
     expect(screen.getByRole("button", { name: "Dalej" }).className).toBe(before);
     expect(before).not.toContain("cursor-not-allowed");
     expect(before).toContain("cursor-pointer");
@@ -460,8 +436,6 @@ describe("AddProductDialog", () => {
     await goToStepTwo(user);
 
     expect(currentStep()).toHaveTextContent("Cena");
-    // The circle that turns into a checkmark is aria-hidden, so this is the
-    // only thing that tells a screen reader step one is behind us.
     expect(screen.getAllByRole("listitem")[0]).toHaveTextContent("Ukończony");
     expect(screen.queryByLabelText("Nazwa produktu")).not.toBeInTheDocument();
   });
@@ -480,11 +454,8 @@ describe("AddProductDialog", () => {
       "placeholder",
       "0.00",
     );
-    // Both start empty, and empty means empty — not a zero the schema would
-    // have to tell apart from a typed one.
     expect(screen.getByLabelText("Cena netto")).toHaveValue(null);
     expect(screen.getByLabelText("Cena brutto")).toHaveValue(null);
-    // Filled in the frame, so they are defaults rather than placeholders.
     expect(screen.getByLabelText("Stawka VAT")).toHaveTextContent("23%");
     expect(screen.getByLabelText("Waluta")).toHaveTextContent("PLN");
   });
@@ -606,8 +577,6 @@ describe("AddProductDialog", () => {
     await openDialog(user);
     await goToStepThree(user);
 
-    // The switch is drawn on and the limits are drawn filled in, so those are
-    // defaults rather than placeholders.
     expect(screen.getByRole("switch", { name: "Produkt jest dostępny" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Produkt limitowany" })).not.toBeChecked();
     expect(screen.getByText("Limity koszyka")).toBeInTheDocument();
@@ -651,16 +620,13 @@ describe("AddProductDialog", () => {
     const save = () => screen.getByRole("button", { name: "Zapisz produkt" });
     const limited = screen.getByRole("checkbox", { name: "Produkt limitowany" });
     await user.click(limited);
-    // Emptied, which is invalid while the box is on screen...
     await user.clear(screen.getByLabelText("Ilość na magazynie"));
     await user.click(save());
     expect(onSubmit).not.toHaveBeenCalled();
 
-    // ...and no longer anyone's problem once it is not.
     await user.click(limited);
     await user.click(save());
     expect(onSubmit).toHaveBeenCalledOnce();
-    // The emptied box went with the untick, rather than being saved as a zero.
     expect(onSubmit.mock.calls[0]?.[0].limited).toBe(false);
     expect(onSubmit.mock.calls[0]?.[0].stockQuantity).toBeNull();
   });
@@ -676,8 +642,7 @@ describe("AddProductDialog", () => {
     await user.type(min, "20");
     await user.tab();
 
-    // Mirrored: the message has to be visible to someone who only touched the
-    // minimum, and a field keeps quiet until it has been blurred once.
+    // Mirrored onto both fields, but only the blurred minimum shows it yet.
     expect(
       screen.getAllByText("Maksymalna ilość nie może być mniejsza od minimalnej"),
     ).toHaveLength(1);
@@ -776,7 +741,6 @@ describe("AddProductDialog", () => {
     await user.click(save);
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    // The press is not swallowed: it is answered.
     expect(screen.getByText("Minimalna ilość jest wymagana")).toBeInTheDocument();
   });
 

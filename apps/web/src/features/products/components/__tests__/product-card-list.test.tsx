@@ -7,17 +7,12 @@ import { getProductsPage } from "@/features/products/utils/get-products-page";
 
 const verbatim = { normalizer: (value: string) => value };
 
-/**
- * The paging controls inside both layouts read the page out of the URL with
- * nuqs, so they need an adapter even though these tests are handed the page.
- */
 const wrapper = withNuqsTestingAdapter();
 
 describe("ProductCardList", () => {
   it("renders a card per product with the mobile stat panel", () => {
     render(<ProductCardList {...getProductsPage(1, PRODUCTS)} />, { wrapper });
 
-    // "Cena brutto" on the card, against "Cena Brutto" in the table header.
     expect(screen.getAllByText("Cena brutto")).toHaveLength(5);
     expect(screen.getByText('MacBook Pro 14"')).toBeInTheDocument();
     expect(screen.getByText("MBP14M3PRO")).toBeInTheDocument();
@@ -30,7 +25,6 @@ describe("ProductCardList", () => {
     for (const label of ["Komputery", "Telefony", "RTV", "AGD", "Akcesoria"]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
-    // The cards store slugs; none of them reaches the screen.
     expect(screen.queryByText("komputery")).not.toBeInTheDocument();
   });
 

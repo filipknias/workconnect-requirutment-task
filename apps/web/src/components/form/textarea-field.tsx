@@ -8,9 +8,6 @@ import {
   useFieldPresentation,
 } from "./hooks/use-field-presentation";
 
-/**
- * A multi-line text field bound to the enclosing `form.AppField`.
- */
 export function TextareaField({
   label,
   placeholder,
@@ -32,9 +29,7 @@ export function TextareaField({
         value={field.state.value}
         placeholder={placeholder}
         rows={rows}
-        // `field-sizing-content` from the shared Textarea would grow the box as
-        // the description is typed and push the footer around; the frame draws
-        // a fixed three-row box the user can drag taller.
+        // Overrides the shared Textarea's `field-sizing-content`, which grows the box and shifts the footer.
         className={`field-sizing-fixed resize-y ${INVALID_BORDER}`}
         aria-invalid={invalid || undefined}
         aria-describedby={describedBy}

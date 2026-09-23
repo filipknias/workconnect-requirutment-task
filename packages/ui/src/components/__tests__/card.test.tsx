@@ -47,8 +47,6 @@ describe("Card", () => {
   it("drives its own spacing through a custom property", () => {
     renderCard();
 
-    // The products cards override `--card-spacing` rather than restating
-    // every padding, so the variable has to be where the classes read it.
     expect(screen.getByTestId("card").className).toContain("[--card-spacing:--spacing(4)]");
     expect(screen.getByTestId("card").className).toContain("gap-(--card-spacing)");
   });

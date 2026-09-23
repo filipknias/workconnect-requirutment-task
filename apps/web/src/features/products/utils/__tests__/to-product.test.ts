@@ -5,7 +5,6 @@ import {
 } from "@/features/products/schema/product-form-schema";
 import { toProduct } from "@/features/products/utils/to-product";
 
-/** A wizard filled in the whole way, as "Zapisz produkt" would hand it over. */
 const SUBMITTED: ProductFormValues = {
   ...PRODUCT_FORM_DEFAULTS,
   name: "Pixel 9 Pro",

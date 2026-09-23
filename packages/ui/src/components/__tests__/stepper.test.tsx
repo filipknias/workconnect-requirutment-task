@@ -25,7 +25,6 @@ describe("Stepper", () => {
   it("hides the numerals and the connectors from assistive technology", () => {
     render(<Stepper steps={STEPS} currentStep={1} />);
 
-    // The list already conveys position, so the drawn numeral is decoration.
     for (const numeral of ["1", "2", "3"]) {
       expect(screen.getByText(numeral).closest("[aria-hidden]")).not.toBeNull();
     }
@@ -51,9 +50,6 @@ describe("Stepper", () => {
     render(<Stepper steps={STEPS} currentStep={2} />);
 
     const items = screen.getAllByRole("listitem");
-    // The checkmark replaces the numeral and is aria-hidden like it, so the
-    // label is what has to carry "done" — otherwise a finished step and an
-    // untouched one read identically.
     expect(items[0]).toHaveTextContent("Ukończony");
     expect(items[1]).not.toHaveTextContent("Ukończony");
     expect(items[2]).not.toHaveTextContent("Ukończony");

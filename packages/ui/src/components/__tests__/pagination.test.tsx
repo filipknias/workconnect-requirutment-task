@@ -35,8 +35,6 @@ describe("Pagination", () => {
 
     const link = screen.getByRole("link", { name: "2" });
     expect(link).toHaveAttribute("href", "/?page=2");
-    // `nativeButton={false}` would otherwise stamp role="button" and a
-    // tabIndex onto an element that is already both.
     expect(link).not.toHaveAttribute("role");
     expect(link).not.toHaveAttribute("tabindex");
 

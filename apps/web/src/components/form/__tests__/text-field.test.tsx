@@ -83,7 +83,6 @@ describe("TextField", () => {
     input().focus();
     await user.tab();
 
-    // A ring would read as the field having grown inside the wizard's grids.
     expect(input().className).toContain("aria-invalid:border-destructive");
     expect(input().className).not.toContain("aria-invalid:ring");
   });

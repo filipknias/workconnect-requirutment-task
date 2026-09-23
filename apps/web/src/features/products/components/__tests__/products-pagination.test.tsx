@@ -4,11 +4,6 @@ import { withNuqsTestingAdapter, type OnUrlUpdateFunction } from "nuqs/adapters/
 import { describe, expect, it, vi } from "vitest";
 import { ProductsPagination } from "@/features/products/components/products-pagination";
 
-/**
- * The controls are anchors that answer their own click with nuqs' shallow
- * setter, so both halves are worth testing: the `href` a visitor can copy, and
- * the URL update a plain click produces instead of a navigation.
- */
 function renderPagination(
   props: { page: number; totalPages: number },
   onUrlUpdate?: OnUrlUpdateFunction,
@@ -18,7 +13,6 @@ function renderPagination(
   });
 }
 
-/** The numbered buttons, in the order they are drawn — arrows excluded. */
 function numberedPages() {
   return screen
     .getAllByRole("link")
@@ -44,9 +38,6 @@ describe("ProductsPagination", () => {
       "aria-current",
       "page",
     );
-    // Still in the row, and saying why it does nothing. Dropping the role
-    // instead would leave a labelled control that is simply not there to
-    // anyone reading the page through.
     const spent = screen.getByRole("link", { name: /poprzedniej/ });
     expect(spent).toHaveAttribute("aria-disabled", "true");
     expect(spent).not.toHaveAttribute("href");
@@ -88,7 +79,6 @@ describe("ProductsPagination", () => {
     expect(numberedPages()).toEqual(["1", "10", "11", "12", "21"]);
     expect(screen.getAllByText("More pages")).toHaveLength(2);
 
-    // Same width on every page, so the caption beside it never shifts.
     rerender(<ProductsPagination page={1} totalPages={21} />);
     expect(numberedPages()).toEqual(["1", "2", "3", "4", "5", "21"]);
     expect(screen.getAllByText("More pages")).toHaveLength(1);
@@ -107,8 +97,6 @@ describe("ProductsPagination", () => {
 
     expect(onUrlUpdate).toHaveBeenCalledOnce();
     expect(onUrlUpdate.mock.calls[0]?.[0].queryString).toBe("?page=2");
-    // Shallow — this is the whole reason paging stopped being a navigation:
-    // the catalogue's React state has to survive a page change.
     expect(onUrlUpdate.mock.calls[0]?.[0].options.shallow).toBe(true);
   });
 

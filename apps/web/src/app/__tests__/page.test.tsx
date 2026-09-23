@@ -3,12 +3,6 @@ import { withNuqsTestingAdapter } from "nuqs/adapters/testing";
 import { describe, expect, it } from "vitest";
 import Home from "@/app/page";
 
-/**
- * The one test that exercises the whole route: the seed data, the paging seam
- * and both layouts at once. `Home` is a plain server shell now — the page
- * number is read on the client, so it comes in through the nuqs adapter
- * rather than through `searchParams`.
- */
 const renderHome = (searchParams: Record<string, string> = {}) =>
   render(<Home />, { wrapper: withNuqsTestingAdapter({ searchParams }) });
 
@@ -22,7 +16,7 @@ describe("Home", () => {
     expect(screen.getByText("7 produktów w katalogu")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Dodaj produkt/ })).toBeInTheDocument();
 
-    // Both layouts render; CSS picks one at `lg`.
+    // Both layouts render; CSS picks one at `lg`, hence two matches.
     expect(screen.getAllByText('MacBook Pro 14"')).toHaveLength(2);
     expect(screen.queryByText("Dell UltraSharp U2723QE")).not.toBeInTheDocument();
   });
@@ -39,7 +33,6 @@ describe("Home", () => {
 
     expect(screen.getAllByText("Brak produktów na tej stronie")).toHaveLength(2);
     expect(screen.queryByText("Dell UltraSharp U2723QE")).not.toBeInTheDocument();
-    // The header still counts the whole catalogue, not the empty page.
     expect(screen.getByText("7 produktów w katalogu")).toBeInTheDocument();
   });
 });

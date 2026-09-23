@@ -1,17 +1,5 @@
 import type { Product } from "../types/product";
 
-/**
- * Mocked catalogue — there is no API yet. The first five rows are the ones the
- * Figma frames show; the last two exist so page two exercises both badge
- * states. Seven is deliberate: the design's copy says "7 produktów".
- *
- * Only the name, SKU, category, gross price, status and stock come from the
- * frames. The rest is invented to make each row a whole `Product`, the same
- * shape the wizard submits — `priceNet` is the gross price back through 23%,
- * and the seven manufacturers happen to line up one per row.
- *
- * `id` is the lowercased SKU, which is also how a submitted product gets one.
- */
 export const PRODUCTS: Product[] = [
   {
     id: "mbp14m3pro",

@@ -1,4 +1,3 @@
 @import "@repo/ui/globals.css";
 
-/* Tests sit in `__tests__/` beside their sources; keep them out of class detection. */
 @source not "../**/__tests__";

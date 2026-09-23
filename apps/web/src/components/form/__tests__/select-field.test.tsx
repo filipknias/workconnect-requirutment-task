@@ -48,7 +48,6 @@ function TextHarness({
   );
 }
 
-/** The one list whose value is arithmetic rather than an identifier. */
 function NumberHarness() {
   const form = useAppForm({ defaultValues: { vatRate: 23 } });
 
@@ -74,10 +73,7 @@ function stored() {
   return screen.getByRole("status").textContent;
 }
 
-/**
- * Base UI opens and closes on its own schedule, so both halves wait for the
- * trigger to say so rather than assuming the click landed.
- */
+// Base UI opens and closes asynchronously; wait on `aria-expanded`, not the click.
 async function openPopup(user: ReturnType<typeof userEvent.setup>) {
   await user.click(trigger());
   await waitFor(() => expect(trigger()).toHaveAttribute("aria-expanded", "true"));
@@ -94,7 +90,6 @@ describe("SelectField", () => {
   it("shows the placeholder while the field holds the empty string", () => {
     render(<TextHarness />);
 
-    // Base UI spells "nothing selected" as null; the form spells it "".
     expect(trigger()).toHaveTextContent("Wybierz producenta");
     expect(stored()).toBe("empty");
     expect(trigger()).toHaveAttribute("aria-required", "true");
@@ -139,8 +134,6 @@ describe("SelectField", () => {
     const user = userEvent.setup();
     render(<TextHarness />);
 
-    // Opening the popup moves focus off the trigger, so a blur rule would
-    // flash a message while the list is still open.
     await openPopup(user);
     expect(screen.queryByText("Producent jest wymagany")).not.toBeInTheDocument();
 

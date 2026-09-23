@@ -108,34 +108,10 @@ function ToastAction({
   );
 }
 
-/**
- * The mark each toast type carries, keyed by `type`. A new variant is a new
- * entry here and nothing else; a type with no entry draws no icon at all, so
- * an untyped toast is just its title and nothing is thrown.
- *
- * Only `success` is drawn today — it is the only type this app sends. The
- * others went out with the shadcn default rather than being kept unused: an
- * icon nobody has seen is an icon nobody has checked against the design, and
- * the next one should be drawn when there is a design to draw it from.
- */
 const TOAST_ICONS: Record<string, React.ReactNode> = {
   success: (
-    // The design draws this one filled: a solid green disc with the check
-    // knocked out of it in white. Lucide's circle-check is a `<circle>` plus
-    // the tick's `<path>`, and both `fill` and `stroke` inherit from the svg —
-    // so the disc takes the green, the tick is stroked white over it, and the
-    // tick path's own green fill is invisible against the disc behind it. The
-    // circle has to opt out of that stroke, or the disc wears a white ring
-    // that eats a pixel off its edge.
-    //
-    // Spelled out rather than `green-600`: Tailwind v4 repalletted that token
-    // away from the value this design was drawn against, and the status badge
-    // in `apps/web` hard-codes the same hex for the same reason.
-    //
-    // `size-5` rather than the slot's default 16px, which is what the design
-    // draws and also what a solid disc needs — a filled mark reads smaller
-    // than an outlined one at the same box. The slot's `:not([class*='size-'])`
-    // guard is what lets this through.
+    // Hex, not `green-600`: Tailwind v4 moved that token off the design's value.
+    // `[&>circle]:stroke-none` stops the white stroke ringing the disc.
     <CircleCheckIcon
       className="size-5 fill-[#16a34a] stroke-white [&>circle]:stroke-none"
       aria-hidden="true"
@@ -167,16 +143,6 @@ function ToastList() {
     <Toast
       key={toastItem.id}
       toast={toastItem}
-      // There is no close button any more, so the toast itself is the dismiss
-      // target. The click is deliberately not fenced off from the action
-      // button inside it: a toast whose action has just been taken has said
-      // what it had to say, and dismissing on that click is what one is
-      // expected to do.
-      //
-      // This is the pointer half only. The keyboard already had its own way
-      // out before the X went — Base UI closes a focused toast on `Escape` —
-      // and a swipe in any direction still works, so closing twice over a
-      // flick that also lands a click is a no-op on an already-closing toast.
       className="cursor-pointer"
       onClick={() => close(toastItem.id)}
     >
@@ -198,12 +164,7 @@ function Toaster({
   viewportClassName,
   ...props
 }: ToastPrimitive.Provider.Props & {
-  /**
-   * Classes for the viewport. The toasts are portalled to the body, so they
-   * sit outside whatever surface opened them and cannot inherit from it — a
-   * light-only app has to pass `light-surface` through here or its toasts turn
-   * dark for a dark-mode visitor.
-   */
+  /** Toasts portal to <body>; pass `light-surface` or they turn dark in dark mode. */
   viewportClassName?: string;
 }) {
   return (

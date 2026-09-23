@@ -2,14 +2,6 @@
 
 import { usePageLink } from "../hooks/use-page-link";
 
-/**
- * What a page with nothing on it shows. Both layouts render it, so the copy and
- * the way back to page one live in one place.
- *
- * The way back is offered only from a page that is not page one. An empty page
- * one means an empty catalogue — there is no first page to return to, and a
- * link that reloads the same nothing is a promise the screen cannot keep.
- */
 export function ProductsEmptyState({ page }: { page: number }) {
   const pageLink = usePageLink();
 

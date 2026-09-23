@@ -4,11 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { Toaster, createToastManager } from "../toast";
 
-/**
- * A toast has no close button, so the whole toast is the dismiss target. A
- * fresh manager per test rather than the module-level one, which would carry
- * a toast from one test into the next.
- */
+// A fresh manager per test: the module-level one carries toasts between tests.
 function showToast() {
   const manager = createToastManager();
   render(<Toaster toastManager={manager} />);

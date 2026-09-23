@@ -10,7 +10,6 @@ import {
   productPricingSchema,
 } from "@/features/products/schema/product-form-schema";
 
-/** The message a field would show — the first failing check, as the form does. */
 function firstError(
   values: Partial<typeof PRODUCT_INFO_DEFAULTS>,
   field: keyof typeof PRODUCT_INFO_DEFAULTS,
@@ -120,7 +119,6 @@ describe("productInfoSchema", () => {
   });
 });
 
-/** The same, for step 2. */
 function firstPricingError(
   values: Partial<typeof PRODUCT_PRICING_DEFAULTS>,
   field: keyof typeof PRODUCT_PRICING_DEFAULTS,
@@ -195,7 +193,6 @@ describe("productPricingSchema", () => {
     });
 
     it("shows the required message first when a field is empty", () => {
-      // Both checks see null; only the first one is meant to complain about it.
       const issues = productPricingSchema
         .safeParse({ ...VALID_PRICING, priceNet: null })
         .error?.issues.filter((issue) => issue.path[0] === "priceNet");
@@ -206,7 +203,6 @@ describe("productPricingSchema", () => {
   });
 });
 
-/** And for step 3. */
 function firstAvailabilityError(
   values: Partial<typeof PRODUCT_AVAILABILITY_DEFAULTS>,
   field: keyof typeof PRODUCT_AVAILABILITY_DEFAULTS,
@@ -237,7 +233,6 @@ describe("productAvailabilitySchema", () => {
       expect(
         firstAvailabilityError({ limited: false, stockQuantity: null }, "stockQuantity"),
       ).toBeUndefined();
-      // The value a tick-then-untick leaves behind cannot block the step.
       expect(
         firstAvailabilityError({ limited: false, stockQuantity: -4 }, "stockQuantity"),
       ).toBeUndefined();
@@ -327,8 +322,6 @@ describe("productAvailabilitySchema", () => {
     });
 
     it("shows a box's own problem before the cross-field one", () => {
-      // 0 is both below the bound and below the minimum; only the first
-      // message is the one that field should be showing.
       expect(
         firstAvailabilityError({ minQuantity: 5, maxQuantity: 0 }, "maxQuantity"),
       ).toBe("Maksymalna ilość musi wynosić co najmniej 1");

@@ -55,7 +55,6 @@ describe("Select", () => {
     render(<Controlled />);
 
     expect(trigger()).toHaveTextContent("Wybierz producenta");
-    // What the muted placeholder colour hangs off.
     expect(trigger()).toHaveAttribute("data-placeholder");
   });
 

@@ -6,15 +6,8 @@ import { describe, expect, it } from "vitest";
 import { ProductsCatalogue } from "@/features/products/components/products-catalogue";
 import { PRODUCTS } from "@/features/products/data/products";
 
-/**
- * The catalogue end to end: the wizard fills in, the row lands, the count and
- * the caption move with it.
- *
- * `hasMemory` makes the testing adapter behave like a real one — it keeps what
- * the setter writes, which is what "jump back to page one" needs to be visible
- * here. `Toaster` is mounted for the same reason it is in the root layout:
- * `toast.add` only reaches a provider that is listening.
- */
+// `hasMemory` keeps what the setter writes, so the jump to page one is visible;
+// `toast.add` only reaches a mounted `Toaster`.
 function renderCatalogue(searchParams: Record<string, string> = {}) {
   return render(<ProductsCatalogue initialProducts={PRODUCTS} />, {
     wrapper: ({ children }) => (
@@ -25,12 +18,10 @@ function renderCatalogue(searchParams: Record<string, string> = {}) {
   });
 }
 
-/** The desktop table; the mobile cards render beside it and CSS picks one. */
 function table() {
   return screen.getByRole("table");
 }
 
-/** A filled-in wizard, all the way to a clickable "Zapisz produkt". */
 async function fillWizard(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: "Dodaj produkt" }));
 
@@ -64,7 +55,6 @@ describe("ProductsCatalogue", () => {
     const rows = within(table()).getAllByRole("row").slice(1);
     expect(rows[0]).toHaveTextContent("Pixel 9 Pro");
     expect(rows[0]).toHaveTextContent("PX9PRO256");
-    // The slug went in; the label comes out.
     expect(rows[0]).toHaveTextContent("Telefony");
     expect(rows[0]).toHaveTextContent("Dostępny");
     expect(screen.getByText("8 produktów w katalogu")).toBeInTheDocument();
@@ -112,8 +102,6 @@ describe("ProductsCatalogue", () => {
     await fillWizard(user);
     await user.click(screen.getByRole("button", { name: "Zapisz produkt" }));
 
-    // Paging is a shallow URL write, not a navigation — nothing remounts, so
-    // the product added a moment ago is still in the catalogue.
     // Both layouts render a pagination; either one drives the same state.
     await user.click(screen.getAllByRole("link", { name: "2" })[0]!);
     expect(within(table()).getAllByRole("row")).toHaveLength(4);

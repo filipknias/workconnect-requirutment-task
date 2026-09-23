@@ -2,24 +2,10 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/*
- * Dark mode is system-driven only — there is no theme toggle and no
- * `next-themes`. `shadcn init`/`add` emit a `.dark` class variant instead, so
- * this variant and the `@media` token block below are the two spots to
- * re-apply after any `shadcn init --force`.
- */
 @custom-variant dark (@media (prefers-color-scheme: dark));
 
-/*
- * Load-bearing. `packages/ui` is symlinked into `node_modules`, which Tailwind
- * skips during automatic source detection, so without this line every class
- * used only inside a `packages/ui` component is dropped and the app renders
- * unstyled. Consuming apps need no `@source` of their own — Tailwind detects
- * their sources automatically. Path is relative to this file.
- */
 @source "../**/*.{ts,tsx}";
 
-/* Tests sit in `__tests__/` beside their sources; keep them out of class detection. */
 @source not "../**/__tests__";
 
 @theme inline {
@@ -65,22 +51,6 @@
     --font-sans: var(--font-sans);
 }
 
-/*
- * `.light-surface` pins the light palette onto a subtree.
- *
- * The product UI is light-only (see the note in `apps/web/src/app/page.tsx`),
- * but the dark `@media` block below still repoints the tokens on `:root` for a
- * dark-mode visitor — so anything that paints from them, an input's
- * `border-input` or a popup's `bg-popover`, turns dark and vanishes against a
- * white dialog. One class on the surface fixes every control inside it at once,
- * instead of each component hard-coding neutrals to defend itself.
- *
- * It shares the declaration block with `:root` so the light values exist once.
- * The dark block below deliberately keeps targeting `:root` alone: a
- * `.light-surface` element sets these on itself, which beats what it would
- * otherwise inherit. Portalled popups are outside the subtree in the DOM and
- * need the class of their own.
- */
 :root,
 .light-surface {
     --background: oklch(1 0 0);

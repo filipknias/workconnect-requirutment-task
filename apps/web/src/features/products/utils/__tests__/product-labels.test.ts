@@ -33,8 +33,6 @@ describe("formatPageCaption", () => {
   it("leaves the separator the caption's one break point", () => {
     const caption = formatPageCaption({ page: 99, totalPages: 2, total: 7 });
 
-    // Anything else would be an unbreakable line under a stack narrower than
-    // it is.
     expect(caption.split(" ")).toEqual([
       "Strona\u00a099\u00a0z\u00a02",
       "·",

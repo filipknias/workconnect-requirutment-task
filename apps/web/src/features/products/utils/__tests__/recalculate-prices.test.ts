@@ -17,8 +17,6 @@ describe("applyPriceEdit", () => {
     });
 
     it("rounds the gross price to the cent", () => {
-      // 19.99 x 1.23 is 24.587699999999998 in floating point, and the stored
-      // number is what the input shows.
       expect(
         applyPriceEdit(EMPTY, { field: "priceNet", value: 19.99 }).priceGross,
       ).toBe(24.59);
@@ -50,7 +48,6 @@ describe("applyPriceEdit", () => {
     });
 
     it("rounds the net price, not the typed one", () => {
-      // 24.5 / 1.23 is 19.91869918699187.
       expect(applyPriceEdit(EMPTY, { field: "priceGross", value: 24.5 })).toEqual({
         priceNet: 19.92,
         priceGross: 24.5,
@@ -81,10 +78,6 @@ describe("applyPriceEdit", () => {
     });
 
     it("writes the net price back from the recomputed gross one", () => {
-      // 19.999 was typed, so it was left alone at the time. The new rate makes
-      // 21.6 the gross price, and 21.6 is a 20.00 net price — the sub-cent
-      // precision has nowhere to live once a gross price is derived from it,
-      // so both boxes move.
       const priced = applyPriceEdit(EMPTY, { field: "priceNet", value: 19.999 });
 
       expect(applyPriceEdit(priced, { field: "vatRate", value: 8 })).toEqual({
@@ -155,7 +148,6 @@ describe("applyPriceEdit", () => {
     });
 
     it("never leaves one price behind without the other", () => {
-      // The only two shapes reachable: both empty, or both present.
       const edits = [
         { field: "priceNet", value: 100 },
         { field: "priceGross", value: null },

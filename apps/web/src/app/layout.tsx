@@ -26,9 +26,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full font-sans antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        {/* The toasts are portalled to the body, outside every `light-surface`
-            subtree in the app, so the viewport carries the class itself — see
-            the note in `@repo/ui`'s `globals.css`. */}
+        {/* Toasts portal to the body, outside every `light-surface`, so the
+            viewport must carry the class itself or they render dark. */}
         <NuqsAdapter>
           <Toaster viewportClassName="light-surface">{children}</Toaster>
         </NuqsAdapter>

@@ -13,9 +13,8 @@ import { usePageLink } from "../hooks/use-page-link";
 import { visiblePages } from "../utils/visible-pages";
 
 const ITEM = "h-8 rounded-md text-sm font-medium text-neutral-950";
-/** The outline variant ships a `dark:bg-input/30` that would otherwise win over the blue. */
+// The `dark:` overrides beat the outline variant's `dark:bg-input/30`.
 const ACTIVE = `${ITEM} border-transparent bg-blue-600 text-white hover:bg-blue-600 hover:text-white dark:bg-blue-600 dark:hover:bg-blue-600`;
-/** An edge arrow has nowhere to go, so it renders as inert text. */
 const SPENT = `${ITEM} pointer-events-none opacity-50`;
 
 export function ProductsPagination({
@@ -28,8 +27,7 @@ export function ProductsPagination({
   const pageLink = usePageLink();
   const hasPrevious = page > 1;
   const hasNext = page < totalPages;
-  // `?page=99` sits past the end, so its neighbour is the last real page rather
-  // than page 98 — an arrow never points at another page that does not exist.
+  // Clamped so `?page=99` points back at the last real page, not page 98.
   const previous = Math.min(page - 1, totalPages);
   const next = Math.max(page + 1, 1);
 
@@ -42,13 +40,8 @@ export function ProductsPagination({
             aria-label="Przejdź do poprzedniej strony"
             className={hasPrevious ? ITEM : SPENT}
             aria-disabled={hasPrevious ? undefined : true}
-            // A spent arrow keeps the role it had a moment ago rather than
-            // vanishing from the row a screen reader hears: an inert control
-            // that explains itself is the point of `aria-disabled`, and a bare
-            // `<span>` would simply be gone. The role is a prop rather than an
-            // attribute on the span because `PaginationLink` clones the
-            // rendered element with `role: undefined` and spreads its own
-            // props after — only a prop survives that.
+            // A prop, not on the `<span>`: `PaginationLink` overwrites the
+            // rendered element's `role`, so only a prop survives.
             role={hasPrevious ? undefined : "link"}
             render={hasPrevious ? <a {...pageLink(previous)} /> : <span />}
           />
@@ -56,8 +49,6 @@ export function ProductsPagination({
 
         {visiblePages(page, totalPages).map((slot, index) =>
           slot === "ellipsis" ? (
-            // Index rather than the slot: there are two of these and they are
-            // never reordered, only redrawn.
             <PaginationItem key={`ellipsis-${index}`}>
               <PaginationEllipsis />
             </PaginationItem>

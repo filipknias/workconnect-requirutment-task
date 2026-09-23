@@ -9,12 +9,6 @@ import {
   type RevealErrorsOn,
 } from "@/components/form/hooks/use-field-presentation";
 
-/**
- * The smallest control the hook can dress: it supplies the ids, the message
- * and the blur handler, and this does nothing but hang them on an input. Every
- * bound field in `../` is this plus its own markup, so the rule is tested once
- * here rather than five times over.
- */
 function Probe({ revealOn }: { revealOn: RevealErrorsOn }) {
   const field = useFieldContext<string>();
   const { id, errorId, error, invalid, describedBy, handleBlur } =
@@ -59,7 +53,6 @@ describe("useFieldPresentation", () => {
   it("ties the label, the control and the message together", () => {
     render(<Harness revealOn="blur" />);
 
-    // The label resolves to the control at all, which is the id contract.
     expect(probe()).toBeInTheDocument();
     expect(probe()).not.toHaveAttribute("aria-describedby");
   });
@@ -88,9 +81,7 @@ describe("useFieldPresentation", () => {
     await user.tab();
     expect(screen.getByText("Za krótkie")).toBeInTheDocument();
 
-    // Straight back in and fixed. TanStack keeps one error per cause, so a
-    // message produced by a `blur` validator would sit there until the next
-    // blur — this is what proves the re-run happens under `change`.
+    // No second blur: this only passes if `handleBlur` re-validated under `change`.
     await user.type(probe(), "c");
 
     expect(screen.queryByText("Za krótkie")).not.toBeInTheDocument();
@@ -113,8 +104,6 @@ describe("useFieldPresentation", () => {
 
     expect(screen.queryByText("Za krótkie")).not.toBeInTheDocument();
 
-    // A select moves focus into its popup and a chip group is a row of
-    // separate boxes, so neither has a blur worth waiting for.
     await user.type(probe(), "a");
 
     expect(screen.getByText("Za krótkie")).toBeInTheDocument();

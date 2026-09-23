@@ -5,22 +5,6 @@ import { CheckboxGroup as CheckboxGroupPrimitive } from "@base-ui/react/checkbox
 import { cn } from "cn"
 import { CheckIcon } from "lucide-react"
 
-/**
- * A multiple-choice control drawn as a row of pills.
- *
- * It looks like a set of toggle buttons but behaves — and announces itself — as
- * a group of checkboxes, which is what it is: any number of them may be on, and
- * turning one on does not turn another off.
- *
- * Selection is signalled by a tick as well as by the fill, so the state does not
- * rest on colour alone. The tick is added rather than reserved, so the chips
- * reflow as they are picked.
- *
- * Presentation only. It knows nothing about forms, validation or what the
- * options mean; the label, the legend and any error message belong to whoever
- * renders it. Colours are explicit neutrals because the app is light-only; see
- * the note in `apps/web/src/app/page.tsx`.
- */
 type CheckboxChipOption = {
   value: string
   label: string

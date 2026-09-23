@@ -35,8 +35,6 @@ describe("Textarea", () => {
       "field-sizing-content",
     );
 
-    // The wizard pins it: a box that grows as the description is typed would
-    // push the dialog's footer around.
     rerender(<Textarea aria-label="Opis" className="field-sizing-fixed resize-y" />);
     expect(screen.getByLabelText("Opis").className).toContain(
       "field-sizing-fixed",

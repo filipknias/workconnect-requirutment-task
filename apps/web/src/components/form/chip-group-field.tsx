@@ -8,16 +8,6 @@ import { FieldError, FieldLegend, FieldSet } from "@repo/ui/components/field";
 import { useFieldContext } from "./context/field-context";
 import { useFieldPresentation } from "./hooks/use-field-presentation";
 
-/**
- * A multiple-choice field bound to the enclosing `form.AppField`.
- *
- * The group is a `<fieldset>` so its `<legend>` names every chip inside it, and
- * the error hangs off the fieldset rather than off any one chip — the rule is
- * about the set, not about a particular option. There is deliberately no
- * `aria-required`: it is not a supported attribute on a group, and putting it
- * on each checkbox would claim every chip must be ticked. The message carries
- * the requirement instead.
- */
 export function ChipGroupField({
   legend,
   options,

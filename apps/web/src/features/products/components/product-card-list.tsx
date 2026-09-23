@@ -32,11 +32,6 @@ function Stat({
   );
 }
 
-/**
- * The mobile layout. The caption and pagination sit centred on the canvas below
- * the stack rather than in a grey bar, and the card labels the price "Cena
- * brutto" where the desktop header capitalises it.
- */
 export function ProductCardList({ products, page, totalPages, total }: ProductsPage) {
   return (
     <div className="flex flex-col gap-6">
