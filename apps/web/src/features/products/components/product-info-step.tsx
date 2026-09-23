@@ -6,7 +6,7 @@ import {
   PRODUCT_FEATURES,
   PRODUCT_MANUFACTURERS,
 } from "@/features/products/data/product-options";
-import type { WizardForm } from "@/features/products/hooks/use-wizard-form";
+import type { WizardForm } from "@/features/products/hooks/use-add-product-wizard";
 
 export function ProductInfoStep({ form }: { form: WizardForm }) {
   return (

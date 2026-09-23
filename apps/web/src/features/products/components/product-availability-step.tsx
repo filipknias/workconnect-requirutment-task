@@ -2,7 +2,7 @@
 
 import { FieldGroup } from "@repo/ui/components/field";
 import { Separator } from "@repo/ui/components/separator";
-import type { WizardForm } from "@/features/products/hooks/use-wizard-form";
+import type { WizardForm } from "@/features/products/hooks/use-add-product-wizard";
 
 export function ProductAvailabilityStep({ form }: { form: WizardForm }) {
   return (

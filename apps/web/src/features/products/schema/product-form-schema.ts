@@ -149,19 +149,3 @@ export const PRODUCT_FORM_DEFAULTS = {
 };
 
 export type ProductFormValues = typeof PRODUCT_FORM_DEFAULTS;
-
-const STEP_SCHEMAS = [
-  productInfoSchema,
-  productPricingSchema,
-  productAvailabilitySchema,
-];
-
-export function stepSchema(step: number) {
-  return STEP_SCHEMAS[step - 1];
-}
-
-// Parses the schema instead of reading TanStack's `isValid`, which is true on a
-// blank form because no validator has run yet.
-export function isStepComplete(step: number, values: unknown): boolean {
-  return stepSchema(step)?.safeParse(values).success ?? false;
-}

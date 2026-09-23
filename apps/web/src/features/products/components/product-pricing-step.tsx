@@ -5,16 +5,22 @@ import {
   PRODUCT_CURRENCIES,
   PRODUCT_VAT_RATES,
 } from "@/features/products/data/product-options";
-import type { WizardForm } from "@/features/products/hooks/use-wizard-form";
-import type { PriceEdit } from "@/features/products/utils/recalculate-prices";
+import type { WizardForm } from "@/features/products/hooks/use-add-product-wizard";
+import {
+  applyPriceEdit,
+  type PriceEdit,
+} from "@/features/products/utils/recalculate-prices";
 
-export function ProductPricingStep({
-  form,
-  onEdit,
-}: {
-  form: WizardForm;
-  onEdit: (edit: PriceEdit) => void;
-}) {
+export function ProductPricingStep({ form }: { form: WizardForm }) {
+  const edit = (priceEdit: PriceEdit) => {
+    const { priceNet, priceGross, vatRate } = form.state.values;
+    const next = applyPriceEdit({ priceNet, priceGross, vatRate }, priceEdit);
+
+    form.setFieldValue("priceNet", next.priceNet);
+    form.setFieldValue("priceGross", next.priceGross);
+    form.setFieldValue("vatRate", next.vatRate);
+  };
+
   return (
     <FieldGroup>
       <div className="grid gap-5 md:grid-cols-2">
@@ -24,7 +30,7 @@ export function ProductPricingStep({
               label="Cena netto"
               placeholder="0.00"
               required
-              onValueChange={(value) => onEdit({ field: "priceNet", value })}
+              onValueChange={(value) => edit({ field: "priceNet", value })}
             />
           )}
         </form.AppField>
@@ -34,7 +40,7 @@ export function ProductPricingStep({
               label="Cena brutto"
               placeholder="0.00"
               required
-              onValueChange={(value) => onEdit({ field: "priceGross", value })}
+              onValueChange={(value) => edit({ field: "priceGross", value })}
             />
           )}
         </form.AppField>
@@ -47,7 +53,7 @@ export function ProductPricingStep({
               label="Stawka VAT"
               options={PRODUCT_VAT_RATES}
               required
-              onValueChange={(value) => onEdit({ field: "vatRate", value })}
+              onValueChange={(value) => edit({ field: "vatRate", value })}
             />
           )}
         </form.AppField>

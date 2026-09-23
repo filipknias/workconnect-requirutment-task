@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  isStepComplete,
   PRODUCT_AVAILABILITY_DEFAULTS,
-  PRODUCT_FORM_DEFAULTS,
   PRODUCT_INFO_DEFAULTS,
   PRODUCT_PRICING_DEFAULTS,
   productAvailabilitySchema,
@@ -114,7 +112,7 @@ describe("productInfoSchema", () => {
     });
 
     it("does not hold step one back", () => {
-      expect(isStepComplete(1, { ...VALID, features: [] })).toBe(true);
+      expect(productInfoSchema.safeParse({ ...VALID, features: [] }).success).toBe(true);
     });
   });
 });
@@ -339,46 +337,5 @@ describe("productAvailabilitySchema", () => {
         }).success,
       ).toBe(true);
     });
-  });
-});
-
-describe("isStepComplete", () => {
-  const VALID_AVAILABILITY = PRODUCT_AVAILABILITY_DEFAULTS;
-  const FILLED = {
-    ...PRODUCT_FORM_DEFAULTS,
-    ...VALID,
-    ...VALID_PRICING,
-    ...VALID_AVAILABILITY,
-  };
-
-  it("reports a blank form incomplete", () => {
-    expect(isStepComplete(1, PRODUCT_FORM_DEFAULTS)).toBe(false);
-    expect(isStepComplete(2, PRODUCT_FORM_DEFAULTS)).toBe(false);
-  });
-
-  it("judges only the step it is asked about", () => {
-    expect(isStepComplete(1, { ...PRODUCT_FORM_DEFAULTS, ...VALID })).toBe(true);
-    expect(isStepComplete(2, { ...PRODUCT_FORM_DEFAULTS, ...VALID })).toBe(false);
-
-    expect(isStepComplete(1, { ...PRODUCT_FORM_DEFAULTS, ...VALID_PRICING })).toBe(
-      false,
-    );
-    expect(isStepComplete(2, { ...PRODUCT_FORM_DEFAULTS, ...VALID_PRICING })).toBe(
-      true,
-    );
-  });
-
-  it("calls step three complete straight away — the frame ships it prefilled", () => {
-    expect(isStepComplete(3, PRODUCT_FORM_DEFAULTS)).toBe(true);
-    expect(isStepComplete(3, FILLED)).toBe(true);
-  });
-
-  it("holds step three back on a limit that does not make sense", () => {
-    expect(isStepComplete(3, { ...FILLED, maxQuantity: 0 })).toBe(false);
-    expect(isStepComplete(3, { ...FILLED, minQuantity: 20 })).toBe(false);
-  });
-
-  it("reports a step past the last one incomplete", () => {
-    expect(isStepComplete(4, FILLED)).toBe(false);
   });
 });
