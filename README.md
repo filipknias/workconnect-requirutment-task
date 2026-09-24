@@ -105,8 +105,7 @@ Tests sit in a `__tests__/` folder next to the files they test (see
 and no `dist/`. Next transpiles it automatically; `transpilePackages` is not
 needed on Next 16.
 
-It holds shadcn/ui components and nothing else. No Zod schemas, no TanStack
-Form bindings, no nuqs parsers. A component there takes props and renders;
+It holds only shadcn/ui components. A component there takes props and renders;
 anything that knows about validation, URL state or data belongs in `apps/web`.
 
 Components live flat in `packages/ui/src/components/`, exactly as the shadcn
@@ -133,15 +132,7 @@ CLI can resolve its `lib` and `hooks` aliases; deleting them breaks
 
 `packages/ui/src/styles/globals.css` is the single Tailwind entry point and
 owns every design token. `apps/web/src/app/globals.css` does nothing but import
-it. Add tokens there, not in the app.
-
-Dark mode is system-driven only — `@custom-variant dark (@media
-(prefers-color-scheme: dark))`, no toggle and no `next-themes`.
-
-That file also carries a load-bearing `@source "../**/*.{ts,tsx}"`. Tailwind
-skips `node_modules` during automatic source detection, and `packages/ui` is
-symlinked there, so without it every class used only inside a `@repo/ui`
-component silently disappears from the output CSS.
+it.
 
 ### Feature-first structure in `apps/web`
 
@@ -153,9 +144,6 @@ src/app/                 routes only — thin, delegating to features
 src/components/          shared across features
 src/features/<feature>/  everything for one feature
 ```
-
-Inside a feature, group by kind. Not every folder is needed — add one when it
-has something to hold:
 
 ```
 src/features/products/
@@ -182,8 +170,6 @@ src/components/form/
   context/     field-context.ts
 ```
 
-There are no barrel files anywhere. Import the module you want by its path.
-
 ### Forms
 
 Forms use TanStack Form through one app-wide binding, `useAppForm`, in
@@ -199,9 +185,6 @@ Form — there is no adapter package:
 ```tsx
 useAppForm({ validators: { onChange: mySchema } });
 ```
-
-Use the `field` component (`@repo/ui/components/field`) rather than shadcn's
-legacy `form` component, which is react-hook-form specific.
 
 ### URL state
 
@@ -220,7 +203,7 @@ export const productSearchParams = {
 
 Client components call `useQueryStates(productSearchParams)`. Paging is a
 shallow URL update rather than a navigation (`use-page-link.ts`), because a
-server round-trip would rebuild the list and drop products added in the wizard.
+server round-trip would rebuild the list and drop products added in the dialog.
 
 ### Tests
 
@@ -235,16 +218,9 @@ packages/ui/src/components/__tests__/dialog.test.tsx
 ```
 
 The shared `@repo/vitest-config` collects `src/**/*.test.{ts,tsx}` and both
-workspaces re-export `@repo/vitest-config/react` as-is. The glob is deliberately
-broader than `__tests__/`, so a misplaced test still runs instead of being
-silently skipped; the folder rule is a convention, not enforced. `globals: true`
+workspaces re-export `@repo/vitest-config/react` as-is. `globals: true`
 is on, which is what gives Testing Library its automatic `cleanup` between
 tests.
 
 Both `globals.css` files carry `@source not "../**/__tests__"`, so class names
-that appear only in tests never reach the output CSS.
-
-Inside `packages/ui`, tests import components by relative path (`../dialog`)
-rather than through `@repo/ui/...`.
-
-There is no coverage tooling.
+that appear only in tests never reach the output CSS..
