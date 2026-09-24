@@ -1,34 +1,101 @@
 # WorkConnect
 
-Foundations for the WorkConnect recruitment task. This repository is a scaffold:
-it contains no features and no data. Everything here exists to make the first
-real feature cheap to write.
+A product catalogue built with Next.js 16. It
+lists products in a paginated table and adds new
+ones through a three-step form dialog — basic info, pricing with net/gross/VAT
+recalculation, and availability.
 
-## Layout
+There is no backend. The catalogue is seeded from a static array
+(`apps/web/src/features/products/data/products.ts`), and products added in the
+wizard live in client state only, so they disappear on a full page reload.
 
+## Running the app
+
+Prerequisites: Node.js 20.9 or newer (developed on Node 24) and pnpm 10. pnpm
+is pinned through `packageManager` in the root `package.json`, so Corepack can
+provide the right version:
+
+```bash
+corepack enable
+pnpm install
+pnpm dev
 ```
-apps/web                 Next.js 16 App Router application
-packages/ui              @repo/ui — shared, buildless shadcn/ui components
-packages/eslint-config   @repo/eslint-config
-packages/typescript-config @repo/typescript-config
-packages/vitest-config   @repo/vitest-config
+
+Then open <http://localhost:3000>. Pagination is kept in the URL, e.g.
+`/?page=2`.
+
+For a production build:
+
+```bash
+pnpm build
+pnpm start
 ```
 
-pnpm workspaces, orchestrated by Turborepo. pnpm is enforced via
-`packageManager` in the root `package.json`.
-
-## Commands
+### Other commands
 
 Run from the repository root; each fans out to every workspace via Turborepo.
 
 ```bash
-pnpm install
-pnpm dev         # next dev
-pnpm build       # next build
 pnpm lint        # eslint
-pnpm typecheck   # tsc --noEmit
+pnpm typecheck   # next typegen + tsc --noEmit
 pnpm test        # vitest run
 ```
+
+To run a single workspace, filter it: `pnpm --filter web test`.
+
+## Project structure
+
+pnpm workspaces, orchestrated by Turborepo.
+
+```
+apps/
+  web/                       Next.js 16 App Router application ("web")
+packages/
+  ui/                        @repo/ui — shared, buildless shadcn/ui components
+  eslint-config/             @repo/eslint-config — shared ESLint flat configs
+  typescript-config/         @repo/typescript-config — shared tsconfig bases
+  vitest-config/             @repo/vitest-config — shared Vitest configs
+turbo.json                   task pipeline (dev, build, start, lint, typecheck, test)
+pnpm-workspace.yaml          workspace globs
+```
+
+### `apps/web/src`
+
+```
+app/
+  layout.tsx                 root layout: fonts, NuqsAdapter, toast viewport
+  page.tsx                   the only route — renders the products catalogue
+  globals.css                imports the design tokens from @repo/ui
+components/
+  form/                      TanStack Form field components shared by all forms
+    hooks/use-app-form.ts    the app-wide `useAppForm` binding
+    hooks/use-field-presentation.ts
+    context/field-context.ts
+features/
+  products/
+    types/product.ts         Product, ProductsPage, ProductOption
+    data/                    seed products and select options (categories, …)
+    schema/                  Zod schemas for the wizard, one per step
+    hooks/                   use-add-product-wizard (step state + submit),
+                             use-page-link (shallow pagination links)
+    utils/                   pure helpers: paging, price formatting and
+                             net/gross recalculation, parsing form values
+                             into a Product, labels, URL search params
+    components/              catalogue, table, card list, pagination,
+                             add-product dialog and its three step panels
+```
+
+### `packages/ui/src`
+
+```
+components/                  shadcn/ui components (base-nova style, Base UI),
+                             plus custom ones: stepper, checkbox-chip-group, toast
+styles/globals.css           the single Tailwind entry point and design tokens
+lib/, hooks/                 empty, kept so the shadcn CLI resolves its aliases
+```
+
+Tests sit in a `__tests__/` folder next to the files they test (see
+[Tests](#tests)).
 
 ## Conventions
 
@@ -96,6 +163,7 @@ src/features/products/
   data/        the source of truth and the seam over it
   schema/      Zod schemas, and the types inferred from them
   utils/       pure helpers: formatters, labels, search-param parsers
+  hooks/       the feature's React hooks
   components/  the feature's React components
 ```
 
@@ -118,15 +186,18 @@ There are no barrel files anywhere. Import the module you want by its path.
 
 ### Forms
 
-`zod` and `@tanstack/react-form` are installed but deliberately unwired. There
-is no `useAppForm` binding and no multistep shell yet; build them with the
-first real form so the abstraction is shaped by a real case.
+Forms use TanStack Form through one app-wide binding, `useAppForm`, in
+`src/components/form/hooks/use-app-form.ts`. It registers the shared field
+components (`TextField`, `SelectField`, `NumberField`, …), so a form renders
+`<form.AppField name="…">{(field) => <field.TextField … />}</form.AppField>`.
+Field components read their contexts from `context/field-context.ts`, never from
+`use-app-form.ts`, or the two form an import cycle.
 
 Zod 4 implements Standard Schema, so a schema is passed straight to TanStack
 Form — there is no adapter package:
 
 ```tsx
-useForm({ validators: { onChange: mySchema } })
+useAppForm({ validators: { onChange: mySchema } });
 ```
 
 Use the `field` component (`@repo/ui/components/field`) rather than shadcn's
@@ -134,31 +205,22 @@ legacy `form` component, which is react-hook-form specific.
 
 ### URL state
 
-`nuqs` is mounted: `NuqsAdapter` wraps the app in `src/app/layout.tsx`. Nothing
-else is scaffolded.
+`nuqs` is mounted: `NuqsAdapter` wraps the app in `src/app/layout.tsx`.
 
 Convention: a feature that reads search params declares its parsers once, in
-`src/features/<feature>/utils/search-params.ts`, and both the client hooks and
-the server loader import that same object.
+`src/features/<feature>/utils/search-params.ts`, and every caller imports that
+same object. Never redeclare a parser at a call site — the default would drift.
 
 ```ts
-// src/features/shifts/utils/search-params.ts
-import { createLoader, parseAsInteger, parseAsString } from "nuqs/server";
-
-export const shiftSearchParams = {
-  q: parseAsString.withDefault(""),
+// src/features/products/utils/search-params.ts
+export const productSearchParams = {
   page: parseAsInteger.withDefault(1),
 };
-
-export const loadShiftSearchParams = createLoader(shiftSearchParams);
 ```
 
-Client components then call `useQueryStates(shiftSearchParams)`, and server
-components call `loadShiftSearchParams(searchParams)`. Never redeclare a parser
-at a call site — the default would drift between the two.
-
-`Pagination` from `@repo/ui` ships unwired; `PaginationLink` renders a plain
-`<a href>`. Wiring it to nuqs means swapping in a Next `<Link>` or a button.
+Client components call `useQueryStates(productSearchParams)`. Paging is a
+shallow URL update rather than a navigation (`use-page-link.ts`), because a
+server round-trip would rebuild the list and drop products added in the wizard.
 
 ### Tests
 
@@ -186,11 +248,3 @@ Inside `packages/ui`, tests import components by relative path (`../dialog`)
 rather than through `@repo/ui/...`.
 
 There is no coverage tooling.
-
-## The smoke page
-
-`apps/web/src/app/page.tsx` is not a feature. It renders a Button, a Dialog and
-a static Table from `@repo/ui` to prove the scaffold works end to end: package
-resolution, Base UI hydration inside a server component, and Tailwind picking
-up classes that exist only in `packages/ui`. Replace it with the first real
-route.
