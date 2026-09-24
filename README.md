@@ -1,4 +1,4 @@
-# WorkConnect
+# Recruitment task - product catalogue
 
 A product catalogue built with Next.js 16. It
 lists products in a paginated table and adds new

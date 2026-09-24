@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "WorkConnect",
-  description: "WorkConnect recruitment task",
+  title: "Products catalogue",
+  description: "Products catalogue listing page",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
